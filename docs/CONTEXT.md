@@ -7,7 +7,7 @@
 CEAN es un simulador de examen de ingreso a Derecho. La primera versión funcional
 está desarrollada y el usuario la publicó en GitHub Pages el 6 de octubre de 2026.
 Se restauró el destino original del clon tras un fork a otra cuenta. El último commit
-local observado antes de esta actualización es `a649022` (`Actualización supabase`).
+local observado antes de esta actualización es `2531f44` (`Act 4 supabase mejora 2`).
 Ahora hay cambios locales de acceso con Supabase por subir por el
 usuario. El asistente no hace push ni publica. La revisión docente sigue pendiente.
 
@@ -27,34 +27,30 @@ usuario. El asistente no hace push ni publica. La revisión docente sigue pendie
 - No se hizo push, reescritura de historial ni eliminación del fork en esta reparación.
 - Procedimiento de cuentas y remotos: `docs/GITHUB.md`.
 
-Acceso vigente: **correo + contraseña mediante Supabase Auth**. Se sustituyó
-el formulario de username y la sesión local: solo cuentas existentes, correo
-confirmado, validación remota con `getUser`, sin alta pública, SMTP ni OTP.
-La sesión del SDK permanece en memoria; cada apertura/recarga pide credenciales.
-Una sesión local antigua no autoriza.
-Los nombres DavidDuranIbañez y SoledadMachaca ya no son accesos vigentes.
-No se crearon ni modificaron cuentas remotas durante esta implementación.
-Los datos de los perfiles antiguos se preservan, sin asociación automática a correos.
+## Acuerdo vigente de autenticación: Google (reemplaza el anterior)
 
-Flujo: **acceso Supabase sin registro → landing → examen de 100 preguntas / 60 minutos
-→ resultados → historial y Mis estadísticas**.
-Hay guardado automático, reanudación, marcado para revisar, borrado de respuesta,
-corrección por pregunta, estadísticas por área y exportación JSON.
+El 7 de octubre el usuario autorizó **Entrar con Google** para evitar repartir
+contraseñas/códigos y mantener GitHub Pages. Reemplaza expresamente el acuerdo
+anterior de correo + contraseña de la conversación compartida, que se leyó completa.
+No volver a proponer OTP/SMTP, reparto de códigos ni cambio de alojamiento.
 
-## Acuerdo definitivo de autenticación (conversación compartida completa)
+Implementación local: botón Google, PKCE y callback en la misma raíz del sitio,
+verificación Auth + RPC `cean_has_access` contra lista privada de correos. Hook
+Before User Created restringe las nuevas cuentas a Google y correos permitidos.
+Los tokens permanecen en memoria; sessionStorage conserva solo PKCE temporalmente.
+No hay contraseñas CEAN ni registro público en la interfaz. Los perfiles locales
+anteriores se preservan y no se asignan automáticamente a Google.
 
-Se releyeron todos los mensajes textuales disponibles de la conversación compartida,
-no solamente su último paso. El usuario había descartado OTP/códigos por correo,
-SMTP/Brevo y Google OAuth por complejidad y aceptado finalmente correo + contraseña
-individual en Supabase Auth, con registro público cerrado y usuarios precreados.
-Mantener GitHub Pages; Supabase únicamente autentica. El usuario pidió expresamente
-no implementar un alojamiento nuevo. No crear Workers, migrar hosting, añadir SMTP,
-OTP, tablas ni Storage como consecuencia implícita de una consulta de seguridad.
+**Pendiente remoto:** SQL `supabase/google-access.sql`, hook, proveedor Google con
+Client ID/Secret, URLs OAuth y altas Google habilitadas después del hook. No se
+modificó Supabase remoto. El docente carga correos en bloque; el script incluye su
+correo proporcionado, no inventa los de Soledad/alumnos. Leer GOOGLE_SETUP.md.
+No usar Authentication Users como lista de autorización: usar cean_authorized_emails.
+El usuario hará commit/push. No afirmar que Google está operativo hasta configurarlo.
 
-El objetivo aceptado allí es impedir acceso casual por reenvío del enlace; no
-prometer impedir compartir voluntariamente credenciales ni proteger archivos que
-siguen públicos. El cambio local pendiente exige el formulario al abrir/recargar,
-sin restaurar automáticamente una sesión del SDK; los historiales se conservan.
+Flujo: Google → autorización remota → landing → examen 100 preguntas / 60 minutos
+→ resultados / historial / estadísticas. Datos del examen siguen locales, banco
+sigue público; no se autorizó migrarlo ni añadir panel docente en este cambio.
 
 ## Requisitos vigentes
 
@@ -102,7 +98,9 @@ descarga todo el banco para comenzar.
 | Diseño, responsive, estados | `assets/css/styles.css` |
 | Vistas, navegación, eventos y guardado | `assets/js/app.js` |
 | Sorteos, corrección, validación de intentos | `assets/js/core.js` |
-| Perfiles, contraseña, IndexedDB y Web Locks | `assets/js/storage.js` |
+| Perfiles, IndexedDB y Web Locks | `assets/js/storage.js` |
+| Google, callback y permisos remotos | `assets/js/auth.js`, `auth-service.js` |
+| Configuración Google/Supabase | `docs/GOOGLE_SETUP.md`, `supabase/google-access.sql` |
 | Conway/Canvas | `assets/js/life.js` |
 | Plazo persistente y registros por pregunta | `assets/js/timing.js` |
 | Cálculos estadísticos puros | `assets/js/statistics.js` |
@@ -117,11 +115,10 @@ descarga todo el banco para comenzar.
 ## Decisiones relevantes
 
 Se usa IndexedDB para el historial para evitar el pequeño cupo de localStorage.
-`auth.js` usa Supabase Auth y no lee las credenciales locales. La sesión nueva
-se verifica contra el servidor; los datos de usuario y la sesión antigua no autorizan.
-IndexedDB guarda intentos por `supabase:<UUID>`. Los perfiles locales anteriores
-siguen intactos bajo sus claves originales; no migrarlos por coincidencia de nombre.
-La autenticación necesita Internet. La persistencia de exámenes sigue siendo local.
+`auth.js` usa Google/Supabase; verifica usuario y autorización remota. No lee
+claves locales. IndexedDB guarda intentos por `supabase:<UUID>`, sin migración
+automática de perfiles anteriores. La autenticación necesita Internet. El banco
+sigue en JSON públicos y la persistencia de exámenes sigue local.
 
 Los intentos almacenan copias de sus preguntas y cinco opciones, por lo que una
 edición del banco no altera un resultado previo. Web Locks impide que dos pestañas
@@ -134,24 +131,15 @@ respuestas y se identifican como parciales. Detalle en `docs/ANALYTICS.md`.
 
 ## Verificación y pendientes
 
-**Supabase / SimulacroExamenDER**: configuración pública en `supabase-config.js`,
-SDK 2.117.2 por CDN en `supabase-client.js`, acceso en `auth.js`. Formulario de
-correo/contraseña, verificación remota al entrar/recargar, cierre de sesión y
-bloqueo si el SDK o Auth no están disponibles. URL/clave verificadas con HTTP 200.
-Prueba en Edge: SDK real con Auth simulado para éxito/recarga/rechazo de token,
-cuentas separadas, examen, estadísticas, móvil, preservación y fallo de CDN;
-además un intento inválido contra Supabase real. No se usaron credenciales reales.
-Pendiente del usuario: probar su cuenta existente en localhost y publicar el cambio.
-Leer `docs/SUPABASE.md`. No añadir sincronización/tablas/panel docente implícitamente.
-
-`npm run check`: banco completo, integridad/IDs/incisos/tamaños. `npm test`: trece
-pruebas de sorteos, corrección, plazos, eventos, estadísticas, compatibilidad y Conway. Prueba de navegador
-con Edge: acceso, dos perfiles, dos pestañas, reanudación, 20 aciertos/20 errores/60
-pendientes, historial, nueva ronda y móvil. Capturas locales en `test-results/`, ignoradas.
+**Supabase / SimulacroExamenDER**: Google preparado localmente, ajustes remotos
+pendientes en GOOGLE_SETUP.md. SDK real probado en Edge con OAuth/Auth/RPC
+simulados, sin usar cuentas reales. SQL comprobado en PostgreSQL temporal con
+roles y restricciones. 21 pruebas Node del motor/estadísticas/acceso/CSV pasan.
+Detalles en TESTING.md. No se hizo commit/push ni cambios remotos.
 
 Pendiente del docente: validación y ajuste de los 201.800 candidatos, especialmente
 los generados por familia de conceptos y las mutaciones gramaticales.
-Pendiente del usuario: subir esta actualización local del acceso por correo.
+Pendiente del usuario: configurar Google/Supabase y subir esta actualización.
 No se acordaron cuotas por materia, recuperación de contraseñas ni sincronización.
 La migración de historiales antiguos a UUID remotos también requiere definir sus propietarios.
 

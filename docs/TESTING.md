@@ -1,5 +1,29 @@
 # Verificación
 
+## Vigente: Google + lista privada (7 de octubre de 2026)
+
+Los apartados de correo/contraseña y registro local de abajo son históricos.
+El usuario autorizó sustituirlos por Google OAuth. 21 pruebas Node pasan:
+motor/estadísticas + validación Auth y permiso remoto, rechazo cerrado, PKCE
+sin tokens persistentes e importación CSV normalizada/escapada sin reactivar bajas.
+
+PostgreSQL temporal (PGlite fuera del repo): ejecutar el SQL dos veces; autorización
+OAuth; rechazo de login con contraseña, baja e identidad Google con email distinto;
+anon sin acceso a RPC; alumnos sin lectura/escritura de la lista ni ejecución del
+hook; hook con usuario autorizado, desconocido y proveedor Email. Todo pasó.
+
+Edge aislado/SDK real con OAuth, Auth y RPC simulados: redirección completa PKCE,
+canje de código, validación remota, rechazo fuera de lista/RPC ausente/token inválido,
+recarga sin tokens, datos antiguos preservados, examen y estadísticas, salida,
+cancelación, CDN caído, móvil 390/320 px y callback bajo prefijo Pages.
+Captura ignorada `test-results/google-login-mobile.png`.
+
+No se configuró Google remoto ni se crearon usuarios reales. El docente debe
+seguir GOOGLE_SETUP.md y probar cuenta autorizada/no autorizada antes del push.
+Las pruebas simuladas no certifican el consentimiento real Google ni el hook
+instalado en el proyecto remoto. El banco sigue público y no cambió.
+
+
 ## Acceso vigente: Supabase Auth (7 de octubre de 2026)
 
 La autenticación local descrita en las pruebas históricas de este documento fue

@@ -1,4 +1,6 @@
 import { supabaseReady } from './supabase-client.js';
+import { createAccessService } from './auth-service.js';
+import { clearAuthVerifiers } from './auth-storage.js';
 
 async function client() {
   const value = await supabaseReady;
@@ -6,52 +8,26 @@ async function client() {
   return value;
 }
 
-function message(error) {
-  if (error?.status === 429) return 'Demasiados intentos. Espera un momento antes de volver a entrar.';
-  if (error?.code === 'email_not_confirmed') return 'Tu correo todavía no está habilitado. Consulta con CEAN.';
-  if (error?.code === 'invalid_credentials' || error?.status === 400 || error?.status === 401) return 'Correo o contraseña incorrectos, o cuenta no habilitada.';
-  return 'No se pudo verificar el acceso. Comprueba tu conexión e inténtalo otra vez.';
+const service = createAccessService(client, new URL('../../', import.meta.url).href);
+const clearVerifiers = () => clearAuthVerifiers(sessionStorage, 'cean.supabase.auth.v1');
+export async function beginGoogleSignIn() {
+  clearVerifiers();
+  try { return await service.beginGoogleSignIn(); }
+  catch (error) { clearVerifiers(); throw error; }
 }
+export const verifyAccess = () => service.verifyAccess();
+export async function logout() { await service.logout(); clearVerifiers(); }
 
-function profile(user) {
-  if (!user?.id || !user?.email || !user.email_confirmed_at) throw new Error('Tu correo todavía no está habilitado. Consulta con CEAN.');
-  return {
-    id: `supabase:${user.id}`,
-    name: String(user.user_metadata?.full_name || user.user_metadata?.name || user.email),
-    username: user.email,
-  };
-}
-
-// getUser consulta Auth: los datos guardados en el navegador no autorizan el acceso.
-export async function restoreSession() {
-  const sdk = await client();
-  const { data: cached, error: sessionError } = await sdk.auth.getSession();
-  if (sessionError) throw new Error(message(sessionError));
-  if (!cached.session) return null;
-  const { data, error } = await sdk.auth.getUser();
-  if (error) {
-    if (error.status === 401 || error.status === 403) {
-      await sdk.auth.signOut({ scope: 'local' });
-      return null;
-    }
-    throw new Error(message(error));
-  }
-  return profile(data.user);
-}
-
-export async function authenticate(email, password) {
-  const sdk = await client();
-  const { error } = await sdk.auth.signInWithPassword({ email: email.trim(), password });
-  if (error) throw new Error(message(error));
-  const verified = await restoreSession();
-  if (!verified) throw new Error('No se pudo verificar tu sesión. Inténtalo otra vez.');
-  return verified;
-}
-
-export async function logout() {
-  const sdk = await client();
-  const { error } = await sdk.auth.signOut({ scope: 'local' });
-  if (error) throw new Error('No se pudo cerrar la sesión. Comprueba tu conexión e inténtalo otra vez.');
+export async function completeGoogleSignIn() {
+  const url = new URL(location.href);
+  const code = url.searchParams.get('code');
+  const oauthError = url.searchParams.has('error') || url.searchParams.has('error_description');
+  if (!code && !oauthError) return null;
+  for (const key of ['code', 'error', 'error_code', 'error_description']) url.searchParams.delete(key);
+  history.replaceState(null, '', url.pathname + url.search + url.hash);
+  if (oauthError) { clearVerifiers(); throw new Error('El acceso con Google fue cancelado o tu correo no está autorizado. Inténtalo otra vez o consulta con CEAN.'); }
+  try { return await service.completeGoogleSignIn(code); }
+  finally { clearVerifiers(); }
 }
 
 export async function onSessionEnded(callback) {

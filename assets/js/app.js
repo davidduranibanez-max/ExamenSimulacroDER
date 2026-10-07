@@ -29,7 +29,20 @@ function hero() {
 }
 function renderAuth() {
   setView('auth');
-  main.innerHTML = `<div class="hero-layout">${hero()}<section class="pixel-panel"><div class="panel-topline"><span>ESPACIO DEL POSTULANTE</span><span class="pixel-cross" aria-hidden="true"></span></div><div class="auth-card"><h2>Retoma tu preparación.</h2><p class="subtext auth-intro">Entra con el correo y la contraseña de tu cuenta habilitada en CEAN.</p><form id="auth-form" aria-label="Iniciar sesión"><label class="form-field">Correo electrónico<input name="email" type="email" autocomplete="username" placeholder="tu.correo@ejemplo.com" required maxlength="254" autocapitalize="none" spellcheck="false"></label><label class="form-field">Contraseña<div class="password-wrap"><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required maxlength="200"><button type="button" class="show-password" data-action="password" aria-label="Mostrar contraseña">VER</button></div></label><p id="auth-error" class="form-message" role="alert" hidden></p><button class="btn btn-primary btn-full" type="submit">ENTRAR</button></form><p class="privacy-note"><strong>Tu historial vive en este navegador.</strong> Tus resultados se guardan en este dispositivo. Puedes exportar una copia desde tu historial o tus estadísticas.</p></div></section></div>`;
+  main.innerHTML = `<div class="hero-layout">${hero()}<section class="pixel-panel"><div class="panel-topline"><span>ESPACIO DEL POSTULANTE</span><span class="pixel-cross" aria-hidden="true"></span></div><div class="auth-card"><h2>Tu preparación empieza aquí.</h2><p class="subtext auth-intro">Usa tu cuenta de Google. Solo pueden entrar los correos autorizados por CEAN.</p><div id="auth-form"><button class="btn btn-full google-signin" type="button" data-action="google-login"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.8 12.2c0-.7-.1-1.5-.2-2.2H12v4.2h5.5a4.7 4.7 0 0 1-2 3v2.5h3.3c1.9-1.8 3-4.3 3-7.5Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.8-2.5l-3.3-2.6c-.9.6-2.1 1-3.5 1a6 6 0 0 1-5.6-4.1H3v2.7A10.3 10.3 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 13.8a6.1 6.1 0 0 1 0-3.6V7.5H3a10 10 0 0 0 0 9l3.4-2.7Z"/><path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5L18.7 5A9.7 9.7 0 0 0 12 2a10.3 10.3 0 0 0-9 5.5l3.4 2.7A6 6 0 0 1 12 6.1Z"/></svg>Entrar con Google</button><p id="auth-status" class="subtext" role="status" hidden></p><p id="auth-error" class="form-message" role="alert" hidden></p></div><p class="subtext">Elige el correo que entregaste al docente. La contraseña de Google se introduce únicamente en Google.</p><p class="privacy-note"><strong>Tu historial vive en este navegador.</strong> Tus resultados se guardan en este dispositivo. Puedes exportar una copia desde tu historial o tus estadísticas.</p></div></section></div>`;
+}
+function showAuthError(error) {
+  const element = document.querySelector('#auth-error');
+  if (element) { element.textContent = error.message; element.hidden = false; }
+}
+async function googleLogin(element) {
+  if (element.disabled) return;
+  element.disabled = true;
+  document.querySelector('#auth-error').hidden = true;
+  const status = document.querySelector('#auth-status');
+  status.textContent = 'Abriendo Google…'; status.hidden = false;
+  try { location.assign(await auth.beginGoogleSignIn()); }
+  catch (error) { showAuthError(error); element.disabled = false; status.hidden = true; }
 }
 async function renderLanding() {
   await refreshProfile(); setView('landing');
@@ -59,6 +72,7 @@ async function enterExam(resume) {
   const control = main.querySelector('[data-action="start"], [data-action="resume"]');
   if (control) { control.disabled = true; control.textContent = resume ? 'RECUPERANDO…' : 'PREPARANDO EXAMEN…'; }
   try {
+    await auth.verifyAccess();
     const pool = resume ? null : await loadBank();
     void store.withProfileLock(user.id, async () => {
       profile = await store.getProfile(user.id);
@@ -70,7 +84,7 @@ async function enterExam(resume) {
       saveFailed = false; expirySaveFailed = false; mapExpanded = false; setView('exam'); renderExam(); busy = false;
       await new Promise(resolve => { releaseLock = resolve; startClock(); });
     }).catch(error => { busy = false; toast(error.message, true); if (view === 'landing') void renderLanding(); });
-  } catch (error) { busy = false; toast(error.message, true); await renderLanding(); }
+  } catch (error) { busy = false; toast(error.message, true); if (user) await renderLanding(); else renderAuth(); }
 }
 function accountTime() {
   if (!active || lastTick === null) return;
@@ -178,9 +192,9 @@ function exportData(content, filename) {
   link.href = url; link.download = filename; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 async function handleAction(action, element) {
-  if (busy && !['close-modal', 'password', 'map', 'export-active'].includes(action)) return;
+  if (busy && !['close-modal', 'map', 'export-active'].includes(action)) return;
   switch (action) {
-    case 'password': { const input = document.querySelector('#password'), show = input.type === 'password'; input.type = show ? 'text' : 'password'; element.textContent = show ? 'OCULTAR' : 'VER'; element.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña'); break; }
+    case 'google-login': await googleLogin(element); break;
     case 'start': await enterExam(false); break;
     case 'resume': await enterExam(true); break;
     case 'home': if (!(await leaveExam())) break; if (user) await renderLanding(); else renderAuth(); main.focus(); break;
@@ -212,16 +226,6 @@ main.addEventListener('change', event => {
   accountTime(); if (!recordResponse(active, Number(event.target.value))) { void finishExam(true); return; } queueSave();
   const focused = Number(event.target.value); renderExam(); document.querySelector(`input[name="answer"][value="${focused}"]`).focus();
 });
-main.addEventListener('submit', async event => {
-  if (event.target.id !== 'auth-form') return; event.preventDefault();
-  const form = event.target, data = new FormData(form), control = form.querySelector('[type="submit"]');
-  if (control.disabled) return; control.disabled = true; control.textContent = 'UN MOMENTO…';
-  const errorElement = document.querySelector('#auth-error'); errorElement.hidden = true;
-  try {
-    user = await auth.authenticate(data.get('email'), data.get('password'));
-    await renderLanding(); main.focus();
-  } catch (error) { errorElement.textContent = error.message; errorElement.hidden = false; control.disabled = false; control.textContent = 'ENTRAR'; }
-});
 document.addEventListener('visibilitychange', () => { if (active) { refreshClock(); queueSave(); } });
 addEventListener('pagehide', () => { if (active) { accountTime(); queueSave(); } });
 addEventListener('beforeunload', event => { if (saveFailed) { event.preventDefault(); event.returnValue = ''; } });
@@ -234,8 +238,17 @@ async function boot() {
     const response = await fetch(new URL('../../data/manifest.json', import.meta.url));
     if (!response.ok) throw new Error('No se pudo cargar el catálogo de preguntas. Inicia un servidor local; no abras index.html directamente.');
     manifest = await response.json();
-    // Cada apertura o recarga requiere correo y contraseña, incluso con sesión previa.
+    // Solo el regreso de Google permite completar el acceso; no se restaura del disco.
     user = null; renderAuth();
+    const control = main.querySelector('[data-action="google-login"]');
+    control.disabled = true;
+    const status = document.querySelector('#auth-status');
+    status.textContent = 'Comprobando tu acceso…'; status.hidden = false;
+    try {
+      const verified = await auth.completeGoogleSignIn();
+      if (verified) { user = verified; await renderLanding(); main.focus(); }
+    } catch (error) { user = null; showAuthError(error); }
+    finally { control.disabled = false; status.hidden = true; }
     void auth.onSessionEnded(async () => {
       if (!user) return;
       if (active) {
@@ -247,8 +260,7 @@ async function boot() {
       toast('Tu sesión terminó. Inicia sesión para continuar.');
     }).catch(error => {
       if (view !== 'auth') return;
-      const element = document.querySelector('#auth-error');
-      element.textContent = error.message; element.hidden = false;
+      showAuthError(error);
     });
   } catch (error) { main.innerHTML = `<section class="error-card"><h1>No pudimos iniciar el simulador.</h1><p>${e(error.message)}</p>${button('Reintentar', 'retry', 'btn-primary')}</section>`; }
 }

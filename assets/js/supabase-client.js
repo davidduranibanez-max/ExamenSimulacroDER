@@ -1,4 +1,5 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js';
+import { createAuthStorage } from './auth-storage.js';
 
 // Singleton asíncrono: futuras integraciones deben importar esta misma promesa.
 // Un fallo devuelve null: auth.js bloquea el acceso sin recurrir a claves locales.
@@ -12,7 +13,10 @@ async function initializeSupabase() {
     const client = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       auth: {
         storageKey: 'cean.supabase.auth.v1',
-        persistSession: false,
+        storage: createAuthStorage(sessionStorage),
+        // El adaptador conserva solo el verificador; los tokens viven en memoria.
+        persistSession: true,
+        flowType: 'pkce',
         autoRefreshToken: true,
         detectSessionInUrl: false,
       },

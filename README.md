@@ -85,28 +85,21 @@ La selección global no impone cuotas por materia; no se proporcionaron esas cuo
 
 ## Perfiles e historial
 
-El acceso usa **correo + contraseña de Supabase Auth**. Solo entran cuentas
-existentes con correo confirmado. El registro público está desactivado en el
-proyecto y no hay formulario de alta. Las cuentas se gestionan en **Supabase →
-Authentication → Users**; al crearlas se puede marcar **Auto Confirm User** y
-asignar una contraseña individual. No se necesitan códigos por correo ni SMTP.
+El acceso usa **Entrar con Google**, con una lista de correos autorizados en
+Supabase. El alumno elige su cuenta Google; no se le pide ni entrega una contraseña
+del simulador. El servidor valida la sesión y comprueba su autorización antes de
+mostrar Comenzar. Los correos se pueden importar todos juntos desde CSV.
 
-El formulario llama a `signInWithPassword`; al entrar se consulta `getUser`
-para verificar la sesión contra el servidor. Cada apertura o recarga muestra el
-formulario; la sesión queda en memoria y el SDK renueva sus tokens mientras la
-página permanece abierta. **Salir** cierra esa sesión.
-Si falla el servicio, el acceso queda bloqueado; no se recurre a credenciales locales.
+**Configuración remota pendiente:** seguir [docs/GOOGLE_SETUP.md](docs/GOOGLE_SETUP.md)
+para ejecutar el SQL, activar el hook, conectar Google y registrar las URLs exactas.
+La clave pública sola no habilita Google. Authentication → Users muestra cuentas;
+la lista de acceso es `cean_authorized_emails`, privada para los alumnos.
 
-Los nombres DavidDuranIbañez y SoledadMachaca y sus claves locales anteriores ya no
-permiten entrar. Esas cuentas no se crean automáticamente en Supabase: deben existir
-allí con correo y contraseña. El historial usa el UUID remoto estable de cada cuenta,
-con la clave `supabase:<UUID>` en IndexedDB. Web Locks evita modificar el mismo
-examen desde dos pestañas al mismo tiempo.
-
-Los perfiles e historiales anteriores se conservan intactos en el navegador,
-pero no se vinculan automáticamente a un correo: es necesario definir esa migración
-para evitar asignar datos a la persona equivocada. El archivo antiguo de perfiles
-ya no se descarga ni se usa para autorizar el acceso.
+Cada apertura/recarga pide Entrar con Google. La sesión CEAN vive en memoria;
+Google puede recordar su propia sesión. Al volver se canjea el código PKCE y se
+comprueba `getUser` + permiso remoto. Si falla cualquiera, el acceso queda bloqueado.
+Salir cierra esa sesión. El historial local se identifica por `supabase:<UUID>`.
+Los accesos y perfiles locales antiguos no autorizan y sus datos se conservan.
 
 Los exámenes y las estadísticas siguen guardándose **solo en este dispositivo**;
 no hay sincronización entre equipos ni panel docente remoto. Se pueden exportar

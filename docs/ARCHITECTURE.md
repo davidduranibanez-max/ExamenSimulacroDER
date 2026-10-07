@@ -26,11 +26,13 @@ entero aleatorio mediante rechazo, selección de incisos, calificación, validac
 de bancos e intentos y formato de tiempo. Sirve tanto al sitio como al validador
 Node y las pruebas.
 
-**auth.js** valida correo y contraseña en Supabase Auth y verifica sesiones con
-`getUser`. La sesión del SDK usa memoria y renovación de tokens; al abrir/recargar se pide acceso. Los errores
-de red no permiten acceso local alternativo; no hay alta pública. **storage.js**
-administra IndexedDB y Web Locks por UUID remoto; no contiene autenticación local.
-Los perfiles antiguos permanecen intactos y no se vinculan automáticamente a cuentas.
+**auth.js** gestiona OAuth Google/PKCE y sanea el callback; **auth-service.js** valida
+Auth + permiso remoto, y **auth-storage.js** conserva solamente el verificador
+PKCE durante la redirección. Los tokens permanecen en memoria. Recargar pide
+Google; no hay acceso alternativo con cuentas/contraseñas locales. **storage.js**
+administra IndexedDB/Web Locks por UUID. Los históricos antiguos se preservan.
+La tabla de correos, la RPC y el hook están en `supabase/google-access.sql`.
+Configuración remota pendiente y arquitectura específica en SUPABASE.md.
 
 **timing.js** administra el plazo persistente de una hora, las visitas, el tiempo
 visible acumulado y los eventos de respuesta. La finalización toma una copia
@@ -78,7 +80,7 @@ filtros de resultados afectan la revisión, no la calificación.
 | IndexedDB | `cean-exam-v1` / `profiles` / clave userId | `{ active, history }` |
 | Web Locks | `cean.exam.v1.<userId>` | Exclusión del examen mientras está abierto |
 
-Las contraseñas se comprueban en Supabase y no se guardan en la aplicación.
+Google autentica su propia cuenta; CEAN no recibe la contraseña de Google. Supabase verifica la autorización.
 El uso de localhost o HTTPS habilita las APIs necesarias. La autenticación remota
 no vuelve privado el banco estático ni protege resultados locales contra manipulación.
 
@@ -111,14 +113,14 @@ pixelado. Media queries a 1100, 800 y 480 px. Mapa lateral en PC; desplegable en
 Hay enlace para saltar al contenido, etiquetas del formulario de acceso sin registro público, ayudas con mouse/teclado/toque,
 radios nativos, foco visible, `dialog` modal y estados anunciados con `aria-live`.
 
-No hay servicios externos, SDK, CDN, analítica o fuentes descargadas.
+Se usa Supabase Auth/Postgres y el SDK por CDN; no hay fuentes externas ni analítica de terceros.
 Las exportaciones excluyen credenciales y contienen copias de los datos del examen.
 La importación de copias todavía no está implementada.
 ## Integración de Supabase
 
-Desde el 7 de octubre de 2026, `auth.js` usa `supabase-client.js`: promesa singleton
-`supabaseReady`, SDK 2.117.2 por CDN y configuración pública en `supabase-config.js`.
-No requiere build. La sesión se valida remotamente; si falla la carga o Auth,
-se muestra el formulario con error y no se permite acceso por la sesión antigua.
-Los exámenes siguen siendo locales por `supabase:<UUID>`; no se crearon tablas ni
-sincronización. El banco sigue público. Detalles en `SUPABASE.md`.
+Desde el 7 de octubre de 2026, el acceso vigente usa Google con el SDK 2.117.2
+por CDN y configuración pública. Callback en la raíz actual del sitio, respetando
+el prefijo Pages. La lista se administra en Supabase, no se entrega al navegador.
+Se necesita configurar Google, ejecutar el SQL y activar el hook manualmente.
+El banco sigue público y los exámenes siguen siendo locales. SUPABASE.md describe
+el contrato y GOOGLE_SETUP.md el procedimiento de instalación.

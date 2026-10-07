@@ -1,90 +1,63 @@
-# Acceso mediante Supabase Auth
+# Acceso con Google y lista de correos en Supabase
 
-Actualizado: 7 de octubre de 2026, hora de Bolivia.
+Actualizado: 7 de octubre de 2026. El usuario autorizó expresamente sustituir
+correo/contraseña por **Entrar con Google**. Esta decisión reemplaza el acuerdo
+anterior de la conversación compartida. Mantener GitHub Pages; no añadir OTP/SMTP.
 
-## Objetivo y alcance
+## Estado y configuración
 
-El usuario aclaró que el objetivo de la conversación compartida es entrar con
-**correo + contraseña individual comprobados por Supabase**, no solo cargar el SDK.
-La implementación sustituye el acceso local. No crea cuentas ni envía correos.
-No se hicieron commits, push ni despliegues; el usuario publica desde VS Code.
+Implementación local lista para revisión; el docente hace commit y push. La
+configuración remota de Google, el SQL y el hook todavía deben aplicarse. No se
+modificó el proyecto remoto ni se crearon usuarios reales.
 
-Proyecto: **SimulacroExamenDER**.
-URL pública: `https://mnbfmmowmimkadtotvkz.supabase.co`.
-La clave publishable autorizada está en `assets/js/supabase-config.js` y puede
-publicarse. Nunca incluir secret, service_role o contraseñas de base de datos.
+Seguir **[GOOGLE_SETUP.md](GOOGLE_SETUP.md)**, con los valores exactos del proyecto,
+Google Cloud, proveedor, URL Configuration, autorización e importación en bloque.
+La clave pública y URL existentes siguen en `assets/js/supabase-config.js`. El
+Client Secret de Google se guarda únicamente en Supabase, nunca en la página.
 
-## Arquitectura
+## Flujo y archivos
 
-- `index.html` y `app.js` cargan módulos con rutas relativas.
-- `supabase-client.js` exporta `supabaseReady`: SDK 2.117.2 por CDN jsDelivr,
-  sin build ni npm install. Su sesión usa memoria (`persistSession: false`) y renovación automática de
-  tokens. Se retira únicamente la sesión antigua `cean.supabase.auth.v1`.
-- `auth.js` llama a `signInWithPassword({email, password})` y después a `getUser`.
-  Para verificar la sesión recién iniciada consulta `getSession` y después
-  `getUser` con Auth. No se restaura una sesión para entrar automáticamente al abrir. Exige ID, correo y `email_confirmed_at`.
-- Los datos guardados en el navegador, incluyendo la sesión local antigua,
-  no son una autorización. No hay fallback al acceso local si falla la red/CDN.
-- `app.js` muestra errores genéricos de credenciales, correo no habilitado,
-  exceso de intentos y conexión. No registra contraseñas ni tokens en logs.
-  Se vuelve al formulario cuando el SDK notifica SIGNED_OUT.
-- **Salir** guarda el examen local y ejecuta `signOut({scope:'local'})` para
-  cerrar esa sesión, sin desconectar otros dispositivos.
-- El UUID remoto identifica el historial local mediante `supabase:<UUID>`.
-  No usar el email o el nombre editable como identificador ni como rol docente.
+- `auth.js` conecta el SDK a `auth-service.js` y gestiona el callback en la misma
+  página estática. Usa `signInWithOAuth` con Google y PKCE, `prompt=select_account`,
+  y el origen/ruta actuales como redirectTo. No necesita una ruta de servidor.
+- Al volver, retira código/errores de la URL, llama `exchangeCodeForSession`, valida
+  con `getUser`, exige correo confirmado/identidad Google y consulta `cean_has_access`.
+  Solo la respuesta booleana true concede acceso. No se pasa un correo editable
+  a la función: obtiene UUID/correo de la sesión validada por Supabase.
+- `auth-storage.js` conserva verificadores PKCE en sessionStorage durante el viaje
+  a Google y los elimina al terminar/cancelar. Guarda tokens exclusivamente en
+  memoria. El SDK usa persistSession=true con este adaptador; **no implica tokens
+  persistentes en disco**. Recargar vuelve a mostrar el botón; Google puede recordar
+  su propia sesión. La renovación automática mantiene la sesión de la pestaña.
+- `google-access.sql` crea la lista privada con RLS y privilegios restringidos,
+  el hook Before User Created y la RPC. Solo administra el docente mediante
+  Dashboard/SQL; no existe formulario de registro público ni contraseña en CEAN.
+  El hook solo permite nuevas cuentas Google cuyo correo esté activo en la lista.
+  Hay que habilitarlo manualmente antes de activar altas OAuth.
+- La RPC exige un JWT OAuth, un usuario confirmado, identidad Google con correo
+  verificado coincidente y autorización activa. El alumno no puede leer/escribir
+  la lista. La RPC también bloquea cuentas antiguas que no están autorizadas.
+- Se comprueba autorización al entrar y al iniciar/reanudar un examen. No hay
+  presencia en tiempo real ni expulsión inmediata por una baja durante el examen.
+- `scripts/prepare-access.mjs` importa una columna CSV de correos a SQL, normaliza,
+  deduplica, escapa valores y conserva bajas. `access-private/` está en .gitignore.
 
-Los historiales y las estadísticas permanecen en IndexedDB. No se crearon
-tablas ni políticas RLS porque este paso no sincroniza datos de estudiantes.
-El banco y las respuestas siguen siendo archivos públicos de GitHub Pages.
-La autenticación no protege esos archivos ni garantiza calificaciones locales
-contra manipulación. Para protección de datos remotos, definir tablas y RLS.
+## Datos y límites
 
-## Lo que debe hacer el docente en Supabase
+IndexedDB sigue guardando exámenes/estadísticas por `supabase:<UUID>`; no hay
+sincronización ni panel docente. Se preservan todos los perfiles/históricos
+anteriores, sin vinculación automática. Si Google enlaza una cuenta Auth existente
+con el mismo email verificado, conservará su UUID; verificar ese caso en el proyecto.
 
-En **Authentication → Users**, comprobar que existe cada cuenta autorizada con
-su correo y contraseña. Para crearla manualmente, usar **Add user / Create new
-user**, asignar contraseña y marcar **Auto Confirm User**. Esa marca habilita el
-correo administrativamente; no demuestra que el usuario controle ese buzón.
-No hace falta SMTP, OTP ni configurar redirecciones para este acceso con contraseña.
+El banco y las respuestas siguen públicos en GitHub Pages. Google y Supabase
+impiden acceso normal sin cuenta autorizada, pero no convierten los archivos
+estáticos en privados ni impiden prestar cuentas/sesiones. No afirmar lo contrario.
 
-Mantener el proveedor Email habilitado y **Allow new users to sign up** desactivado.
-Se confirmó en la configuración pública que email está habilitado y el registro
-está desactivado. No habilitar registro público como solución a un error de acceso.
-La cuenta de David de la conversación anterior debería servir si cumple estas
-condiciones. Las cuentas locales de David y Soledad no crean usuarios en Supabase.
+## Validación
 
-No se solicitaron ni utilizaron contraseñas reales para probar. La prueba final
-del usuario es entrar en localhost con su cuenta de Supabase existente.
-
-## Compatibilidad de datos anteriores
-
-No se borró localStorage, IndexedDB ni el archivo antiguo de perfiles. El código
-ya no descarga ese archivo ni autentica con sus verificadores. Los históricos
-antiguos siguen bajo sus claves originales y no se asignan automáticamente a un
-UUID remoto. Una migración posterior debe definir y confirmar cada propietario,
-conservando copias completas. Las cuentas nuevas empiezan con un historial local
-propio. No afirmar que los datos se migraron o sincronizaron.
-
-## Verificación y publicación
-
-1. Ejecutar `npm start` y abrir http://localhost:4173.
-2. Comprobar que aparece **Correo electrónico**, sin alta pública.
-3. Entrar con la contraseña de la cuenta de Supabase, no con el username antiguo.
-4. Recargar: debe reaparecer el formulario. Volver a entrar conserva el historial del UUID.
-5. Pulsar Salir: vuelve al formulario. Probar contraseña incorrecta: debe bloquear.
-6. Hacer commit y push desde VS Code. El cambio no llega a Pages hasta publicarlo.
-
-Se verificaron el flujo y errores con el SDK real y respuestas Auth simuladas en
-Edge aislado; también un rechazo real de credenciales ficticias contra Supabase.
-Los detalles y límites están en `TESTING.md`.
-
-Referencias oficiales: [acceso por contraseña](https://supabase.com/docs/reference/javascript/auth-signinwithpassword),
-[verificación remota del usuario](https://supabase.com/docs/reference/javascript/auth-getuser),
-[claves públicas](https://supabase.com/docs/guides/getting-started/api-keys).
-
-## Decisiones confirmadas tras leer la conversación completa
-
-Se descartaron códigos por correo/OTP, SMTP/Brevo y Google OAuth. El acuerdo final
-es correo + contraseña individual con Supabase y GitHub Pages. El usuario acepta
-el modelo simple contra acceso casual por enlace; no hay garantía contra compartir
-credenciales ni contra inspeccionar archivos públicos. No crear un alojamiento nuevo.
+21 pruebas Node del motor, tiempos, estadísticas, servicio de acceso, PKCE y CSV.
+PostgreSQL temporal: SQL idempotente, RLS/privilegios, OAuth autorizado, rechazo
+de contraseña/baja/identidad distinta, anon y hook. Edge aislado con SDK real y
+respuestas OAuth/Auth/RPC simuladas prueba el viaje PKCE, rechazos y el simulador.
+Los detalles están en TESTING.md. El acceso real Google queda pendiente de completar
+la configuración remota; no se usaron cuentas/contraseñas reales.
