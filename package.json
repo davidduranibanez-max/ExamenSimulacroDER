@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node scripts/serve.mjs",
     "dev": "node scripts/serve.mjs",
-    "check": "node scripts/check-bank.mjs",
+    "check": "node scripts/check-public.mjs",
+    "check:bank": "node scripts/check-bank.mjs",
+    "prepare:bank": "node scripts/prepare-bank.mjs",
     "test": "node --test tests/*.test.mjs"
   },
   "engines": { "node": ">=20" }

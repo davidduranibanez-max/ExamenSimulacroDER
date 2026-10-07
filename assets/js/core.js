@@ -47,6 +47,7 @@ export function createExam(pool, pick = randomInt, now = Date.now()) {
 }
 
 export function gradeExam(exam) {
+  if (exam.questions.some(q => q.correct === null)) throw new Error('La corrección de este examen se obtiene de Supabase al finalizar.');
   let correct = 0, incorrect = 0, unanswered = 0;
   const areas = {};
   const results = exam.questions.map((q, i) => {
@@ -68,7 +69,8 @@ export function validExam(exam) {
   if (exam.timingVersion !== undefined && (exam.timingVersion !== 1 || exam.timeLimitMs !== EXAM_DURATION_MS || !Number.isFinite(exam.deadlineAt) || !Number.isFinite(exam.observedAt) || !Array.isArray(exam.questionTimes) || exam.questionTimes.length !== EXAM_SIZE || !['complete', 'partial'].includes(exam.timingCoverage) ||
     exam.questionTimes.some(q => !Number.isFinite(q.activeMs) || q.activeMs < 0 || !Array.isArray(q.events) || q.events.some(event => !Number.isFinite(event.at) || !Number.isFinite(event.activeMs) || event.activeMs < 0 || !Number.isFinite(event.elapsedMs) || event.elapsedMs < 0 || event.elapsedMs > EXAM_DURATION_MS || !Number.isFinite(event.remainingMs) || event.remainingMs < 0 || event.remainingMs > EXAM_DURATION_MS || !Number.isInteger(event.weekday) || event.weekday < 0 || event.weekday > 6 || !Number.isInteger(event.hour) || event.hour < 0 || event.hour > 23 || !Number.isFinite(event.utcOffsetMinutes) || typeof event.localDay !== 'string' || (event.kind !== 'answer' && event.kind !== 'clear') || (event.answer !== null && (!Number.isInteger(event.answer) || event.answer < 0 || event.answer > 4)))))) return false;
   return Number.isInteger(exam.current) && exam.current >= 0 && exam.current < EXAM_SIZE && Number.isFinite(exam.elapsedMs) && exam.elapsedMs >= 0 &&
-    new Set(exam.questions.map(q => q.id)).size === EXAM_SIZE && exam.questions.every(q => q.question && q.options?.length === 5 && Number.isInteger(q.correct) && q.correct >= 0 && q.correct < 5) &&
+    new Set(exam.questions.map(q => q.id)).size === EXAM_SIZE && exam.questions.every(q => q.question && q.options?.length === 5 &&
+      ((Number.isInteger(q.correct) && q.correct >= 0 && q.correct < 5) || (exam.remote === true && exam.completedAt === undefined && q.correct === null))) &&
     exam.answers.every(a => a === null || (Number.isInteger(a) && a >= 0 && a < 5));
 }
 

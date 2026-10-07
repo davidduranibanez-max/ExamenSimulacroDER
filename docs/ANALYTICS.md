@@ -3,7 +3,7 @@
 ## Decisiones de producto
 
 - Registro público retirado del formulario, eventos y módulo de almacenamiento.
-  Se conservan las cuentas ya existentes y las dos cuentas iniciales.
+  Se conservan datos locales antiguos; el acceso vigente es Google/lista privada.
 - Cada nuevo simulacro dura una hora desde su creación. El plazo no se pausa al
   navegar, ocultar/cerrar la pestaña o cerrar el navegador.
 - Al llegar a cero se guarda el resultado automáticamente, aun con pendientes.
@@ -11,7 +11,7 @@
   original de vencimiento. No hay servicio que siga ejecutándose en el servidor.
 - Finalizar y confirmar la finalización se muestran en rojo.
 - Copia local en IndexedDB y respaldo Supabase de resultados terminados por UUID,
-  sin borrar ni recalificar históricos. Google autentica; el banco sigue estático.
+  sin borrar ni recalificar históricos. Google autentica; banco/plazo/corrección nuevos viven en Supabase.
   No hay npm install ni proceso de build. Ver CLOUD_HISTORY.md.
 
 ## Dos tiempos diferentes
@@ -19,8 +19,9 @@
 **Duración del examen:** tiempo de calendario consumido desde el inicio, limitado
 a 3.600.000 ms. `deadlineAt` queda guardado y no se vuelve a calcular al recargar.
 `observedAt` conserva la mayor hora observada para no regalar minutos si el reloj
-retrocede durante la sesión. Un sitio estático no puede impedir la manipulación
-del reloj/datos del dispositivo; no es un sistema de vigilancia de exámenes.
+retrocede durante la sesión. La pantalla usa el reloj del dispositivo, pero
+Supabase aplica el plazo al aceptar respuestas de los nuevos intentos. Los tiempos
+de lectura siguen medidos en el navegador; no es un sistema de vigilancia.
 
 **Tiempo visible por pregunta:** milisegundos con esa pregunta abierta y el
 documento visible. Se mide con `performance.now()`, acumula las visitas y no
@@ -119,3 +120,12 @@ al recuperar el historial. Se comprobó igualdad exacta antes y después de la
 sincronización/serialización, incluyendo tiempos, calendarios y revisiones.
 EXPORTS.md describe el paquete descargable y sus seis hojas Excel. No duplicar
 las métricas en una segunda tabla remota que pueda quedar desactualizada.
+
+## Banco privado y corrección (7/10/2026)
+
+PRIVATE_BANK.md reemplaza el guardado solo local: progreso remoto cada 15 segundos,
+plazo y corrección por Supabase, respuestas finales solo después de finalizar.
+Sin tarea programada; la sesión vencida se archiva al volver/solicitar finalizar.
+Cuenta último progreso recibido a tiempo. Snapshots/eventos conservados mantienen
+las mismas fórmulas. Históricos legacy-client sin notas certificadas siguen
+incluidos; no se inventa ni recalifica su información.

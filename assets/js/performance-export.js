@@ -9,7 +9,7 @@ export function performancePackage(user, profile, now = Date.now(), backupState 
     format: 'cean-performance', version: 2, generatedAt: now,
     user: { name: user.name, email: user.username },
     backup: { state: backupState, scope: 'completed-attempts' },
-    profile: { active: profile.active ? structuredClone(profile.active) : null, history },
+    profile: { active: profile.active ? structuredClone(profile.active) : null, history, ...(profile.recoveryCopies?.length ? { recoveryCopies: structuredClone(profile.recoveryCopies) } : {}) },
     statistics: {
       scores: stats.scores, questionSeconds: stats.questionSeconds, improvement: stats.improvement,
       timeline: stats.attempts.map(({exam, ...attempt}) => attempt), rolling: stats.rolling,

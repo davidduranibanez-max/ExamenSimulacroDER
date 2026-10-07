@@ -83,3 +83,10 @@ Archivo descargado de prueba abierto con openpyxl independiente y comprobación 
 integridad ZIP solo de lectura; después apertura y guardado de una copia con Excel
 nativo en instancia oculta. Archivos de prueba quedan en test-results/ ignorado;
 no contienen datos reales del docente/alumnos y no se entregan como informes reales.
+
+## Sesiones privadas y recuperación
+
+El intento nuevo activo tiene correct:null y no exporta claves. Tras finalizar,
+JSON/Excel incluyen claves/revisión devueltas por el servidor. profile.recoveryCopies
+conserva copias locales desplazadas por una revisión remota distinta; solo en JSON,
+no entra en cálculos de nota ni XLSX. Ver PRIVATE_BANK.md para conexión y plazo.

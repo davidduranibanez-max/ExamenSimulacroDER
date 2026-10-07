@@ -1,5 +1,6 @@
 import { validExam } from './core.js';
 import { createCloudHistory, mergeHistory } from './cloud-history.js';
+import { remoteExams } from './remote-exam.js';
 const PREFIX = 'cean.exam.v1.';
 export class StorageError extends Error {}
 
@@ -55,6 +56,7 @@ async function putProfile(userId, profile, remoteOnly = false) {
       // Una descarga tardía no debe sobrescribir respuestas en curso ni nuevos resultados.
       const next = remoteOnly ? { ...existing, history: mergeHistory(existing.history, profile.history) }
         : { ...profile, history: mergeHistory(existing.history, profile.history) };
+      if (next.active?.remote && existing.active?.id === next.active.id) next.active.remoteRevision = Math.max(next.active.remoteRevision || 0,existing.active.remoteRevision || 0);
       profiles.put(next, userId);
     };
     transaction.oncomplete = resolve;
@@ -94,7 +96,7 @@ export async function syncHistory(userId, refresh = false) {
         await putProfile(userId, { history }, true);
       }
       syncedIds.set(userId, new Set(history.map(exam => exam.id)));
-      cloudStatus(userId, 'synced', '✓ Resultados respaldados en Supabase. Examen en curso: guardado en este dispositivo.');
+      cloudStatus(userId, 'synced', '✓ Resultados respaldados en Supabase. El progreso del examen se sincroniza mientras tienes conexión.');
     } catch (error) {
       const setup = ['42P01', 'PGRST205', 'PGRST202', '42883'].includes(error.code);
       cloudStatus(userId, 'pending', setup
@@ -107,14 +109,32 @@ export async function syncHistory(userId, refresh = false) {
 }
 export async function getProfile(userId) {
   if (!initialLoads.has(userId)) {
-    initialLoads.set(userId, syncHistory(userId));
+    initialLoads.set(userId, (async()=>{
+      await syncHistory(userId);
+      if (!userId.startsWith('supabase:')) return;
+      const current = await remoteExams.current();
+      const local = await getLocalProfile(userId);
+      if (current && (!local.active || local.active.remote)) {
+        if (local.active?.id === current.id && local.active.remoteRevision === current.remoteRevision) return;
+        if (local.active) local.recoveryCopies = [...(local.recoveryCopies || []),local.active];
+        local.active = current; await putProfile(userId,local);
+      } else if (!current && local.active?.remote && local.history.some(exam=>exam.id===local.active.id)) {
+        local.active = null; await putProfile(userId,local);
+      }
+    })());
   }
-  await initialLoads.get(userId);
+  try { await initialLoads.get(userId); }
+  catch(error) { initialLoads.delete(userId); throw error; }
   return getLocalProfile(userId);
 }
 export async function saveProfile(userId, profile) {
   await putProfile(userId, profile);
-  // Los cambios por pregunta permanecen locales; subir una vez al terminar.
+  if (profile.active?.remote) {
+    try { await remoteExams.save(profile.active); }
+    catch(error) { if(error.code==='40001') initialLoads.delete(userId); throw error; }
+    await putProfile(userId,profile);
+  }
+  // El progreso remoto se guarda por separado; no volver a subir todo el historial.
   if (profile.history.some(exam => !syncedIds.get(userId)?.has(exam.id))
     && (getCloudStatus(userId).state !== 'pending' || Date.now() - (lastSync.get(userId) || 0) >= 30000)) void syncHistory(userId);
 }

@@ -1,10 +1,11 @@
-import { createExam, gradeExam, flattenBanks, shuffle, formatTime, LETTERS } from './core.js';
+import { gradeExam, formatTime, LETTERS } from './core.js';
 import { initLife } from './life.js';
 import * as store from './storage.js';
 import * as auth from './auth.js';
 import { initializeTiming, remainingTime, visitQuestion, accrueVisibleTime, recordResponse, completeAttempt } from './timing.js';
 import { statisticsHtml } from './statistics-view.js';
 import { performancePackage, downloadPerformanceExcel } from './performance-export.js';
+import { remoteExams } from './remote-exam.js';
 
 const main = document.querySelector('#main'), nav = document.querySelector('#header-nav'), dialog = document.querySelector('#modal');
 let user = null, profile = null, manifest = null;
@@ -53,7 +54,7 @@ function hero() {
 }
 function renderAuth() {
   setView('auth');
-  main.innerHTML = `<div class="hero-layout">${hero()}<section class="pixel-panel"><div class="panel-topline"><span>ESPACIO DEL POSTULANTE</span><span class="pixel-cross" aria-hidden="true"></span></div><div class="auth-card"><h2>Tu preparación empieza aquí.</h2><p class="subtext auth-intro">Usa tu cuenta de Google. Solo pueden entrar los correos autorizados por CEAN.</p><div id="auth-form"><button class="btn btn-full google-signin" type="button" data-action="google-login"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.8 12.2c0-.7-.1-1.5-.2-2.2H12v4.2h5.5a4.7 4.7 0 0 1-2 3v2.5h3.3c1.9-1.8 3-4.3 3-7.5Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.8-2.5l-3.3-2.6c-.9.6-2.1 1-3.5 1a6 6 0 0 1-5.6-4.1H3v2.7A10.3 10.3 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 13.8a6.1 6.1 0 0 1 0-3.6V7.5H3a10 10 0 0 0 0 9l3.4-2.7Z"/><path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5L18.7 5A9.7 9.7 0 0 0 12 2a10.3 10.3 0 0 0-9 5.5l3.4 2.7A6 6 0 0 1 12 6.1Z"/></svg>Entrar con Google</button><p id="auth-status" class="subtext" role="status" hidden></p><p id="auth-error" class="form-message" role="alert" hidden></p></div><p class="subtext">Elige el correo que entregaste al docente. La contraseña de Google se introduce únicamente en Google.</p><p class="privacy-note"><strong>Tu historial, conectado a tu cuenta.</strong> Al finalizar, los resultados se respaldan en Supabase para recuperarlos en otro dispositivo. El examen en curso se guarda en este navegador.</p></div></section></div>`;
+  main.innerHTML = `<div class="hero-layout">${hero()}<section class="pixel-panel"><div class="panel-topline"><span>ESPACIO DEL POSTULANTE</span><span class="pixel-cross" aria-hidden="true"></span></div><div class="auth-card"><h2>Tu preparación empieza aquí.</h2><p class="subtext auth-intro">Usa tu cuenta de Google. Solo pueden entrar los correos autorizados por CEAN.</p><div id="auth-form"><button class="btn btn-full google-signin" type="button" data-action="google-login"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.8 12.2c0-.7-.1-1.5-.2-2.2H12v4.2h5.5a4.7 4.7 0 0 1-2 3v2.5h3.3c1.9-1.8 3-4.3 3-7.5Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.8-2.5l-3.3-2.6c-.9.6-2.1 1-3.5 1a6 6 0 0 1-5.6-4.1H3v2.7A10.3 10.3 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 13.8a6.1 6.1 0 0 1 0-3.6V7.5H3a10 10 0 0 0 0 9l3.4-2.7Z"/><path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5L18.7 5A9.7 9.7 0 0 0 12 2a10.3 10.3 0 0 0-9 5.5l3.4 2.7A6 6 0 0 1 12 6.1Z"/></svg>Entrar con Google</button><p id="auth-status" class="subtext" role="status" hidden></p><p id="auth-error" class="form-message" role="alert" hidden></p></div><p class="subtext">Elige el correo que entregaste al docente. La contraseña de Google se introduce únicamente en Google.</p><p class="privacy-note"><strong>Tu historial, conectado a tu cuenta.</strong> Tus resultados y el progreso confirmado se guardan en Supabase para recuperarlos en otro dispositivo. Conservamos también una copia en este navegador.</p></div></section></div>`;
 }
 function showAuthError(error) {
   const element = document.querySelector('#auth-error');
@@ -71,24 +72,7 @@ async function googleLogin(element) {
 async function renderLanding() {
   await refreshProfile(); setView('landing');
   const history = profile.history, scores = history.map(exam => gradeExam(exam).percent);
-  main.innerHTML = `<div class="hero-layout">${hero()}<section class="pixel-panel"><div class="panel-topline"><span>HOLA, ${e(user.name.toUpperCase())}</span><span class="pixel-cross" aria-hidden="true"></span></div><div class="session-card"><div class="icon-block" aria-hidden="true">✦</div><h2>${profile.active ? 'Tu examen te espera.' : 'Ponte a prueba.'}</h2><p class="subtext">${profile.active ? `Tienes ${profile.active.answers.filter(a => a !== null).length} de 100 preguntas respondidas. Continúa donde lo dejaste.` : '100 preguntas. Cinco alternativas.<br>Todo listo para tu siguiente intento.'}</p><dl class="session-specs"><div><dt>Selección</dt><dd>100 al azar</dd></div><div><dt>Alternativas</dt><dd>A · B · C · D · E</dd></div><div><dt>Duración</dt><dd>60 minutos</dd></div><div><dt>Progreso</dt><dd>Guardado automático</dd></div></dl><div class="landing-actions">${button(profile.active ? 'CONTINUAR EXAMEN' : 'COMENZAR', profile.active ? 'resume' : 'start', 'btn-primary btn-full')}</div><p class="session-rule" style="margin-top:24px">Tienes una hora desde que comienzas. El tiempo sigue corriendo al salir; al agotarse, el examen se corrige automáticamente.</p></div></section></div><div class="landing-lower"><div class="stat-card"><span class="label">Simulacros completados</span><div class="value">${history.length.toString().padStart(2, '0')}</div></div><div class="stat-card"><span class="label">Tu mejor resultado</span><div class="value">${scores.length ? Math.max(...scores) : '—'}<small>${scores.length ? ' / 100' : ''}</small></div></div><div class="stat-card"><span class="label">Promedio de aciertos</span><div class="value">${scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : '—'}<small>${scores.length ? ' %' : ''}</small></div></div></div><details class="bank-notice"><summary>Acerca del banco y las alternativas de práctica</summary><p>Las preguntas y sus respuestas proceden del PDF que proporcionó CEAN. Los 100 distractores propios de cada pregunta se elaboraron para practicar y están pendientes de revisión docente. Este simulador no establece un puntaje oficial de admisión. Cada intento sortea 100 preguntas, cuatro distractores por pregunta y el orden de A a E.</p></details>`;
-}
-async function loadBank() {
-  const selected = shuffle(manifest.questions).slice(0, 100), banks = new Array(selected.length);
-  let next = 0, completed = 0;
-  await Promise.all(Array.from({ length: 8 }, async () => {
-    while (next < selected.length) {
-      const index = next++, record = selected[index];
-      const response = await fetch(new URL(`../../data/${record.file}`, import.meta.url));
-      if (!response.ok) throw new Error(`No se pudo cargar ${record.id}. Comprueba tu conexión.`);
-      banks[index] = await response.json();
-      if (banks[index].id !== record.id) throw new Error(`El archivo de ${record.id} tiene otro identificador.`);
-      completed++;
-      const control = main.querySelector('[data-action="start"]');
-      if (control) control.textContent = `PREPARANDO ${completed} / 100`;
-    }
-  }));
-  return flattenBanks(banks);
+  main.innerHTML = `<div class="hero-layout">${hero()}<section class="pixel-panel"><div class="panel-topline"><span>HOLA, ${e(user.name.toUpperCase())}</span><span class="pixel-cross" aria-hidden="true"></span></div><div class="session-card"><div class="icon-block" aria-hidden="true">✦</div><h2>${profile.active ? 'Tu examen te espera.' : 'Ponte a prueba.'}</h2><p class="subtext">${profile.active ? `Tienes ${profile.active.answers.filter(a => a !== null).length} de 100 preguntas respondidas. Continúa donde lo dejaste.` : '100 preguntas. Cinco alternativas.<br>Todo listo para tu siguiente intento.'}</p><dl class="session-specs"><div><dt>Selección</dt><dd>100 al azar</dd></div><div><dt>Alternativas</dt><dd>A · B · C · D · E</dd></div><div><dt>Duración</dt><dd>60 minutos</dd></div><div><dt>Progreso</dt><dd>Guardado automático</dd></div></dl><div class="landing-actions">${button(profile.active ? 'CONTINUAR EXAMEN' : 'COMENZAR', profile.active ? 'resume' : 'start', 'btn-primary btn-full')}${profile.active ? button('Guardar copia del progreso', 'export-active', 'btn-small') : ''}</div><p class="session-rule" style="margin-top:24px">Tienes una hora desde que comienzas. El tiempo sigue corriendo al salir; al agotarse, el examen se corrige automáticamente.</p></div></section></div><div class="landing-lower"><div class="stat-card"><span class="label">Simulacros completados</span><div class="value">${history.length.toString().padStart(2, '0')}</div></div><div class="stat-card"><span class="label">Tu mejor resultado</span><div class="value">${scores.length ? Math.max(...scores) : '—'}<small>${scores.length ? ' / 100' : ''}</small></div></div><div class="stat-card"><span class="label">Promedio de aciertos</span><div class="value">${scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : '—'}<small>${scores.length ? ' %' : ''}</small></div></div></div><details class="bank-notice"><summary>Acerca del banco y las alternativas de práctica</summary><p>Las preguntas y sus respuestas proceden del PDF que proporcionó CEAN. Los 100 distractores propios de cada pregunta se elaboraron para practicar y están pendientes de revisión docente. Este simulador no establece un puntaje oficial de admisión. Cada intento sortea 100 preguntas, cuatro distractores por pregunta y el orden de A a E.</p></details>`;
 }
 async function enterExam(resume) {
   if (busy || releaseLock) return;
@@ -97,12 +81,11 @@ async function enterExam(resume) {
   if (control) { control.disabled = true; control.textContent = resume ? 'RECUPERANDO…' : 'PREPARANDO EXAMEN…'; }
   try {
     await auth.verifyAccess();
-    const pool = resume ? null : await loadBank();
     void store.withProfileLock(user.id, async () => {
       profile = await store.getProfile(user.id);
       if (resume && !profile.active) throw new Error('Este examen ya finalizó en otra pestaña. Actualiza el inicio.');
       if (!resume && profile.active) throw new Error('Tienes un examen pendiente. Continúalo antes de comenzar otro.');
-      active = initializeTiming(resume ? profile.active : createExam(pool));
+      active = initializeTiming(resume ? profile.active : await remoteExams.start());
       visitQuestion(active);
       profile.active = active; await store.saveProfile(user.id, profile);
       saveFailed = false; expirySaveFailed = false; mapExpanded = false; setView('exam'); renderExam(); busy = false;
@@ -122,7 +105,7 @@ function refreshClock() {
   const remaining = remainingTime(active), clock = document.querySelector('#exam-clock');
   if (clock) { clock.textContent = formatTime(remaining); clock.classList.toggle('timer-urgent', remaining <= 5 * 60000); }
   const warning = document.querySelector('#timer-warning');
-  if (warning) { const text = remaining <= 5 * 60000 ? 'Quedan menos de 5 minutos. El examen finalizará al llegar a cero.' : 'La hora sigue corriendo aunque salgas o cierres la página.'; if (warning.textContent !== text) warning.textContent = text; }
+  if (warning) { const text = remaining <= 5 * 60000 ? 'Quedan menos de 5 minutos. El examen finalizará al llegar a cero.' : 'La hora sigue corriendo. Al vencer se corrigen las últimas respuestas recibidas por Supabase; mantén tu conexión.'; if (warning.textContent !== text) warning.textContent = text; }
   if (remaining === 0 && !busy && !expirySaveFailed) { void finishExam(true); return; }
   if (performance.now() - lastSaveTick >= 5000) { lastSaveTick = performance.now(); queueSave(); }
 }
@@ -138,11 +121,11 @@ function queueSave() {
   saving = saving.catch(() => {}).then(() => store.saveProfile(userId, snapshot)).then(() => {
     saveFailed = false;
     const status = document.querySelector('#save-status');
-    if (status) { status.classList.remove('error'); status.textContent = '✓ Progreso guardado en este dispositivo'; }
+    if (status) { status.classList.remove('error'); status.textContent = active?.remote ? '✓ Copia local guardada. Sincronización con Supabase cada 15 segundos.' : '✓ Copia local guardada. Supabase guarda el progreso mientras tienes conexión.'; }
   }).catch(error => {
     saveFailed = true;
     const status = document.querySelector('#save-status');
-    if (status) { status.classList.add('error'); status.textContent = 'No se pudo guardar. Exporta una copia antes de cerrar.'; }
+    if (status) { status.classList.add('error'); status.textContent = active?.remote ? 'Copia local conservada. Falló la sincronización: comprueba Internet y reintenta.' : 'No se pudo guardar. Exporta una copia antes de cerrar.'; }
     toast(error.message, true); throw error;
   });
   void saving.catch(() => {}); return saving;
@@ -159,7 +142,7 @@ function mapHtml(exam, results = null) {
 }
 function renderExam(focus = false) {
   const q = active.questions[active.current], index = active.current;
-  main.innerHTML = `<div class="exam-top"><div><div class="eyebrow">SIMULACRO EN CURSO</div><h1>Una pregunta a la vez.</h1></div><div class="exam-meta"><div><span class="timer-label">TIEMPO RESTANTE</span><span id="exam-clock" class="timer">${formatTime(remainingTime(active))}</span></div>${button(remainingTime(active) ? 'Finalizar' : 'Guardar resultado', 'finish', 'btn-small btn-danger')}</div></div><p class="timer-notice" id="timer-warning" role="status">La hora sigue corriendo aunque salgas o cierres la página.</p><div class="exam-layout">${mapHtml(active)}<div><section class="question-card"><div class="question-card-top"><span class="area-label">${e(q.area)}</span><span class="question-counter">PREGUNTA ${String(index + 1).padStart(2, '0')} / 100</span></div><h2 id="question-title" tabindex="-1">${e(q.question)}</h2><p class="question-hint" id="question-hint">Selecciona una alternativa. Puedes cambiarla antes de finalizar.</p><div class="choices" role="radiogroup" aria-labelledby="question-title" aria-describedby="question-hint">${q.options.map((option, i) => `<label class="choice ${active.answers[index] === i ? 'selected' : ''}"><input type="radio" name="answer" value="${i}" ${active.answers[index] === i ? 'checked' : ''} ${remainingTime(active) === 0 ? 'disabled' : ''}><span class="choice-letter" aria-hidden="true">${LETTERS[i]}</span><span class="choice-text"><span class="sr-only">${LETTERS[i]}. </span>${e(option)}</span></label>`).join('')}</div><div class="question-tools"><button type="button" class="text-button ${active.marked[index] ? 'is-marked' : ''}" data-action="mark" aria-pressed="${active.marked[index]}">${active.marked[index] ? '◆ Marcada para revisar' : '◇ Marcar para revisar'}</button><button type="button" class="text-button" data-action="clear" ${active.answers[index] === null ? 'disabled' : remainingTime(active) === 0 ? 'disabled' : ''}>Borrar respuesta</button></div></section><div class="question-navigation">${button('Anterior', 'previous', '', index === 0 ? 'disabled' : '')}${index === 99 ? button('Finalizar examen', 'finish', 'btn-danger') : button('Siguiente', 'next', 'btn-primary')}</div><p id="save-status" class="autosave ${saveFailed ? 'error' : ''}" role="status">${saveFailed ? 'No se pudo guardar. Exporta una copia antes de cerrar.' : '✓ Progreso guardado en este dispositivo'}</p><div style="text-align:center">${button('Guardar copia', 'export-active', 'btn-small')}</div></div></div>`;
+  main.innerHTML = `<div class="exam-top"><div><div class="eyebrow">SIMULACRO EN CURSO</div><h1>Una pregunta a la vez.</h1></div><div class="exam-meta"><div><span class="timer-label">TIEMPO RESTANTE</span><span id="exam-clock" class="timer">${formatTime(remainingTime(active))}</span></div>${button(remainingTime(active) ? 'Finalizar' : 'Guardar resultado', 'finish', 'btn-small btn-danger')}</div></div><p class="timer-notice" id="timer-warning" role="status">La hora sigue corriendo. Al vencer se corrigen las últimas respuestas recibidas por Supabase; mantén tu conexión.</p><div class="exam-layout">${mapHtml(active)}<div><section class="question-card"><div class="question-card-top"><span class="area-label">${e(q.area)}</span><span class="question-counter">PREGUNTA ${String(index + 1).padStart(2, '0')} / 100</span></div><h2 id="question-title" tabindex="-1">${e(q.question)}</h2><p class="question-hint" id="question-hint">Selecciona una alternativa. Puedes cambiarla antes de finalizar.</p><div class="choices" role="radiogroup" aria-labelledby="question-title" aria-describedby="question-hint">${q.options.map((option, i) => `<label class="choice ${active.answers[index] === i ? 'selected' : ''}"><input type="radio" name="answer" value="${i}" ${active.answers[index] === i ? 'checked' : ''} ${remainingTime(active) === 0 ? 'disabled' : ''}><span class="choice-letter" aria-hidden="true">${LETTERS[i]}</span><span class="choice-text"><span class="sr-only">${LETTERS[i]}. </span>${e(option)}</span></label>`).join('')}</div><div class="question-tools"><button type="button" class="text-button ${active.marked[index] ? 'is-marked' : ''}" data-action="mark" aria-pressed="${active.marked[index]}">${active.marked[index] ? '◆ Marcada para revisar' : '◇ Marcar para revisar'}</button><button type="button" class="text-button" data-action="clear" ${active.answers[index] === null ? 'disabled' : remainingTime(active) === 0 ? 'disabled' : ''}>Borrar respuesta</button></div></section><div class="question-navigation">${button('Anterior', 'previous', '', index === 0 ? 'disabled' : '')}${index === 99 ? button('Finalizar examen', 'finish', 'btn-danger') : button('Siguiente', 'next', 'btn-primary')}</div><p id="save-status" class="autosave ${saveFailed ? 'error' : ''}" role="status">${saveFailed ? 'No se pudo guardar. Exporta una copia antes de cerrar.' : '✓ Copia local guardada. Supabase guarda el progreso mientras tienes conexión.'}</p><div style="text-align:center">${button('Guardar copia', 'export-active', 'btn-small')}</div></div></div>`;
   if (focus) document.querySelector('#question-title').focus({ preventScroll: true });
 }
 function selectedReviewIndices() { return review.questions.map((q, i) => i).filter(i => filter === 'all' || reviewGrade.results[i].status === filter); }
@@ -183,7 +166,7 @@ async function finishExam(automatic = false) {
   if (!active || busy) return; busy = true; dialog.close(); stopClock();
   try {
     await saving.catch(() => {});
-    const completed = completeAttempt(active, Date.now(), automatic), next = { active: null, history: [...profile.history, completed] };
+    const completed = active.remote ? await remoteExams.finish(active) : completeAttempt(active, Date.now(), automatic), next = { ...profile, active: null, history: [...profile.history, completed] };
     await store.saveProfile(user.id, next);
     profile = next; review = completed; filter = 'all'; reviewIndex = 0; mapExpanded = false;
     releaseExam(); renderResults(); main.focus();
@@ -193,7 +176,7 @@ async function finishExam(automatic = false) {
 async function leaveExam() {
   if (!active) return true; stopClock();
   if (remainingTime(active) === 0) { await finishExam(true); return false; }
-  try { await queueSave(); releaseExam(); return true; }
+  try { await queueSave(); if(active?.remote) await remoteExams.save(active,true); releaseExam(); return true; }
   catch (error) { startClock(); throw error; }
 }
 async function refreshProfile() {
@@ -202,8 +185,8 @@ async function refreshProfile() {
   await store.withProfileLock(user.id, async () => {
     profile = await store.getProfile(user.id);
     if (!profile.active || remainingTime(profile.active) > 0) return;
-    const expired = completeAttempt(profile.active, Date.now(), true);
-    const next = { active: null, history: [...profile.history, expired] };
+    const expired = profile.active.remote ? await remoteExams.finish(profile.active) : completeAttempt(profile.active, Date.now(), true);
+    const next = { ...profile, active: null, history: [...profile.history, expired] };
     await store.saveProfile(user.id, next); profile = next;
     toast('La hora de tu examen terminó. Su resultado ya está en tu historial.');
   }).catch(error => toast(error.message, true));
@@ -238,7 +221,7 @@ async function handleAction(action, element) {
     case 'review-question': filter = 'all'; reviewIndex = Number(element.dataset.index); renderResults(true); break;
     case 'review-next': case 'review-previous': { const indices = selectedReviewIndices(); reviewIndex = indices[indices.indexOf(reviewIndex) + (action === 'review-next' ? 1 : -1)] ?? reviewIndex; renderResults(true); break; }
     case 'filter': filter = element.dataset.filter; reviewIndex = selectedReviewIndices()[0] ?? 0; renderResults(); document.querySelector(`[data-filter="${filter}"]`).focus(); break;
-    case 'export-active': accountTime(); exportData({ version:1, user: { name:user.name, username:user.username }, exam:active }, `CEAN-en-curso-${active.id}.json`); break;
+    case 'export-active': { accountTime(); const exam = active || profile.active; exportData({ version:1, user: { name:user.name, username:user.username }, exam }, `CEAN-en-curso-${exam.id}.json`); break; }
     case 'export-review': exportData({ version:1, user: { name:user.name, username:user.username }, exam:review, grade:gradeExam(review) }, `CEAN-resultado-${review.id}.json`); break;
     case 'export-history': {
       profile = await store.getProfile(user.id);
@@ -273,7 +256,7 @@ async function boot() {
   try {
     if (!crypto.subtle || !crypto.randomUUID) throw new Error('Abre el simulador mediante localhost o HTTPS para habilitar el acceso y el sorteo.');
     store.checkStorage();
-    const response = await fetch(new URL('../../data/manifest.json', import.meta.url));
+    const response = await fetch(new URL('../bank-info.json', import.meta.url));
     if (!response.ok) throw new Error('No se pudo cargar el catálogo de preguntas. Inicia un servidor local; no abras index.html directamente.');
     manifest = await response.json();
     // Solo el regreso de Google permite completar el acceso; no se restaura del disco.

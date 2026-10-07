@@ -9,10 +9,10 @@
 5. Consultar `docs/ANALYTICS.md` si cambian temporizador, eventos o estadísticas.
 6. Consultar `docs/EXPORTS.md` para paquete JSON, Excel y biblioteca local (no editar vendor).
 7. Consultar `docs/SUPABASE.md` para Google OAuth y lista de correos autorizados en Supabase;
-   leer `docs/CLOUD_HISTORY.md` para respaldo de resultados terminados y activación SQL.
+   leer `docs/CLOUD_HISTORY.md` para resultados y `docs/PRIVATE_BANK.md` para banco/progreso privados.
 
 No leer el banco completo ni el PDF para cambios de interfaz. Buscar un ID con `rg`
-y abrir únicamente sus JSON. `data/manifest.json` permite localizar cualquier registro.
+y abrir únicamente sus JSON. `../banco-privado/data/manifest.json` permite localizar cualquier registro.
 
 ## Restricciones del usuario
 
@@ -25,7 +25,7 @@ y abrir únicamente sus JSON. `data/manifest.json` permite localizar cualquier r
   a respuestas de otras preguntas. En cada intento seleccionar cuatro y mezclar A–E.
 - Dificultad objetivo alta. Los incisos actuales son **borradores generados**; el usuario
   es el docente y se reservó la revisión. No afirmar que están pedagógicamente validados.
-- Acceso Google OAuth + lista privada; resultados terminados respaldados en Supabase con copia local por UUID.
+- Acceso Google/lista privada; banco, plazo, corrección y progreso nuevos en Supabase. Copia local por UUID.
 - Sin alta pública en CEAN; altas Google restringidas por hook a la lista privada. No aceptar claves locales.
 - Guardado automático, reanudación e historial; conservar registros antiguos sin vincularlos automáticamente.
 - Sin registro público. Mis estadísticas usa únicamente el historial del perfil.
@@ -37,7 +37,7 @@ y abrir únicamente sus JSON. `data/manifest.json` permite localizar cualquier r
 ## Trabajo y validación
 
 - No agregar un backend, dependencia de CDN o proceso de build sin necesidad expresa.
-- No sobrescribir incisos aprobados al regenerar: el importador escribe en `tmp/importado`.
+- No sobrescribir incisos aprobados al regenerar: el importador privado escribe en `../banco-privado/tmp/importado`.
 - No cambiar las respuestas del PDF silenciosamente: documentar correcciones docentes.
 - Preservar copias completas de intentos anteriores; no recalificarlos con el banco actual.
 - Nunca ejecutar `localStorage.clear()` ni borrar IndexedDB en una sesión del usuario.
@@ -51,3 +51,11 @@ y abrir únicamente sus JSON. `data/manifest.json` permite localizar cualquier r
 
 `npm start` → http://localhost:4173. Node.js >=20, cero dependencias npm.
 `README.md` contiene instrucciones de usuario y publicación manual en GitHub Pages.
+
+## Migración privada vigente
+
+Banco y generadores fuera del repo, ../banco-privado. Nunca reintroducir preguntas
+ni CSV/SQL con datos en commits públicos. npm run check valida publicación actual;
+no limpia historial Git. Activación remota private-bank.sql e importación pendientes.
+No force push/reescribir historia ni cambiar alojamiento automáticamente.
+El docente hace commit/push después de activar/probar. Leer PRIVATE_BANK.md.

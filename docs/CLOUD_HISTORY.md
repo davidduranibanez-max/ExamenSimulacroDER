@@ -1,68 +1,43 @@
-# Respaldo de resultados en Supabase
+# Resultados y progreso en Supabase
 
-Implementado localmente el 7 de octubre de 2026 para aproximadamente 100 alumnos.
-Google ya funciona según la confirmación del docente. El 7/10/2026 a las 02:41
-(Bolivia) confirmó la ejecución del SQL nuevo con una captura de Success. No rows
-returned. Falta confirmar la publicación de estos archivos y el respaldo real de
-un resultado. El docente hace su propio commit/push.
+Google y exam-history.sql fueron activados por el docente. El cambio de banco
+privado requiere ejecutar private-bank.sql/importar CSV; aún no activado desde
+esta sesión. Consultar PRIVATE_BANK.md antes de publicar.
 
-## Activación: una sola vez
+## Guardado y consulta
 
-1. Abrir `supabase/exam-history.sql`, copiar todo su contenido.
-2. En el mismo proyecto Supabase: **SQL Editor → New query**, pegar y pulsar **Run**.
-   Debe devolver `Success. No rows returned`. Guardar la consulta es opcional;
-   ejecutar Run sí es necesario. Requiere `google-access.sql` ya instalado.
-3. Hacer commit y push de los archivos del proyecto. No modificar las URLs Google,
-   las claves ni el proveedor que ya funcionan.
-4. Entrar con Google, terminar un examen y esperar el aviso **Resultados respaldados
-   en Supabase**. En otro navegador, entrar con la misma cuenta y abrir Mi historial.
-5. Para ver los alumnos: **Table Editor → cean_exam_attempts**. Cada fila contiene
-   correo, fechas, aciertos, duración y el examen completo con respuestas/eventos.
-   Solo el administrador del proyecto ve todos los alumnos desde el dashboard.
+- Nuevo intento remoto: copia local por interacción/cada cinco segundos; progreso
+  en Supabase aproximadamente cada 15 segundos y al salir. Una revisión impide
+  sobreescritura de otro dispositivo. La conexión es necesaria para comenzar/corregir.
+- cean_finish_exam confirma y corrige con claves/plazo del servidor, guarda una
+  fila inmutable en cean_exam_attempts y retorna resultado antes del archivado local.
+  Se repite sin duplicar; al vencer solo usa progreso recibido a tiempo.
+- cean_live_exams guarda sesión/progreso y se recupera al entrar en otro navegador.
+  Datos locales más antiguos se conservan en recoveryCopies antes de reemplazar.
+- Historial terminado se consulta con UUID, páginas de 50 y RLS; se une a copia
+  local sin duplicados y sin pisar activo. Sincronizar historial busca nuevos finales.
+- Datos anteriores de cliente: cean_save_attempt sigue disponible para importar
+  con verification_source=legacy-client; no puede escribir IDs de sesiones privadas
+  ni suplantar serverVerified. No son notas certificadas. Perfiles de username
+  no se vinculan a Google automáticamente.
+- Estadísticas se recalculan desde snapshots/eventos guardados; no se duplican
+  resúmenes ni se reenvía un paquete completo del alumno por cada respuesta.
+- Si falla red, se conserva la copia local y se ofrece exportar/reintentar. La
+  sincronización del historial reintenta al volver, online o cada minuto pendiente.
+  Borrar navegador antes de confirmar puede perder cambios/resultados pendientes.
 
-Si aparece «el docente debe ejecutar exam-history.sql», el guardado local sigue
-funcionando; falta instalar la tabla/RPC. No otorgar acceso a anon para solucionarlo.
+## Acceso docente y permisos
 
-## Qué se guarda y cuándo
+Dashboard → Table Editor → cean_exam_attempts. Correo, fechas, aciertos, duración,
+JSONB completo y verification_source. Dashboard administrativo ve todos; SELECT
+del alumno está limitado a su UUID Google autorizado. No hay INSERT/UPDATE/DELETE
+directo ni acceso anon. No se creó un panel docente dentro de la web.
 
-- Durante el examen: IndexedDB después de cada interacción y cada cinco segundos.
-  El intento en curso **no se sincroniza entre dispositivos**.
-- Al finalizar o archivar por vencimiento: primero se confirma la copia local,
-  luego se sube una fila por intento a Supabase. Incluye las 100 preguntas, sus
-  cinco opciones, respuestas y tiempos; no los 100 distractores completos.
-- Al entrar: se descarga el historial del UUID Google y se une al local sin duplicar.
-  Los historiales locales anteriores del mismo UUID también se respaldan. No se
-  asignan perfiles viejos de username a cuentas Google automáticamente.
-- Las estadísticas se recalculan con el historial combinado. No se duplica una
-  tabla de estadísticas ni se vuelve a enviar el historial en cada respuesta.
-- Si falla Internet, falta SQL o se agota la cuota: se conserva el resultado local
-  y se muestra **Respaldo pendiente**. Botón **Sincronizar historial**, evento online
-  y reintento cada minuto mientras la sesión sigue abierta. Si se cierra antes de
-  subir, al volver a entrar se reintenta desde IndexedDB.
-- Cambiar de navegador recupera solo lo que Supabase confirmó. Limpiar el navegador
-  antes de subir pierde los resultados pendientes y el examen en curso.
-- **Sincronizar historial** también busca resultados nuevos hechos en otro dispositivo.
-
-## Seguridad y límites
-
-RLS permite SELECT solo al UUID autenticado autorizado; anon no tiene acceso.
-Los alumnos no tienen INSERT/UPDATE/DELETE directo. `cean_save_attempt` obtiene
-el dueño y correo de Auth, comprueba `cean_has_access`, valida forma/tamaño y
-calcula el resumen de aciertos. La clave pública existente es suficiente para
-llamar la RPC, no para administrar tablas ni otros usuarios. No introducir secretos.
-
-La clave primaria `(user_id,id)` evita duplicados. Un resultado ya recibido es
-inmutable para el alumno: los reintentos devuelven la copia recibida originalmente.
-Una respuesta de red tardía se une al historial en una transacción IndexedDB sin
-sobrescribir el examen en curso. Descargas paginadas de 50 filas, filtradas por UUID.
-Las solicitudes tienen un plazo de 15 segundos; SDK y memoria reutilizados.
-
-El límite por intento es 512 KiB. Un exceso conserva la copia local, pero no sube;
-exportar el JSON para investigar. Es un respaldo para práctica, **no una certificación
-de calificaciones**: preguntas/correctas/eventos vienen del navegador y pueden
-manipularse. RLS protege separación entre alumnos, no autenticidad de mediciones.
-El banco sigue público. No hay presencia en vivo ni panel docente propio.
-Eliminar un usuario de Auth elimina sus filas por cascada; exportar antes.
+Resultado nuevo: serverVerified y origen server. El cliente no puede cambiar
+claves/plazo/nota de esa sesión. La lectura/eventos siguen medidos en el navegador
+y pueden manipularse; no son vigilancia ni certificación antifraude. La copia local
+es editable; al recuperar, prevalece resultado de Supabase. El administrador puede
+modificar/borrar datos; eliminar un usuario Auth borra sus filas por cascada.
 
 ## Plan gratuito y capacidad
 
@@ -95,20 +70,18 @@ ni complementos para esta instalación; Pro empieza en US$25/mes. Si el plan gra
 restringe el servicio, la aplicación no compra recursos: mantiene la copia local y
 avisa del respaldo pendiente.
 
+## Capacidad de la migración privada
+
+Añade banco completo de unos 10,46 MiB de JSON antes de compresión/índices, una
+sesión activa por alumno y progreso periódico. El tamaño de resultados no duplica
+los 100 distractores por pregunta; snapshot activo se limpia al archivar resultado.
+Solicitudes de progreso/lectura también consumen recursos/transferencia. No se hizo
+prueba de carga de 100 concurrentes: supervisar Usage y conservar respaldo docente.
+
 ## Verificación
 
-29 pruebas Node: motor, tiempos, Auth y sincronización (idempotencia, aislamiento de
-consultas por UUID, paginación, reintento y rechazo de datos corruptos).
-PostgreSQL temporal: ambos SQL repetidos, RLS entre dos alumnos, anon/bajas bloqueados,
-escritura directa denegada, correo obtenido del servidor y resultados inmutables.
-Edge aislado con SDK real y API simulada: fallo al subir, recuperación manual,
-sin duplicados, navegador nuevo, estadísticas, móvil 320 px y prefijo Pages.
-No se ejecutó el SQL ni se escribieron resultados en el Supabase remoto del docente.
-
-## Descarga y estadísticas
-
-Los datos completos conservados permiten reconstruir todas las métricas sin guardar
-una copia redundante de cada gráfico. Se comprobó igualdad estadística antes/después
-de recuperar tres intentos con eventos. Paquete JSON versión 2 y conversión XLSX
-directa: ver EXPORTS.md. La descarga refleja el estado actual, incluidos resultados
-locales pendientes de subir; el propio archivo indica ese estado.
+33 pruebas Node; PostgreSQL temporal con roles para permisos, aislamiento, sorteo,
+plazo, CAS y corrección. Edge aislado con SDK real y backend PostgreSQL temporal,
+recuperación entre navegadores, fallo de red, móvil/prefijo Pages y exportaciones.
+CSV completo leído por Python y comparado con todos los JSON originales. No se
+modificó Supabase real ni se hicieron commits/push desde esta sesión.

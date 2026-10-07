@@ -197,3 +197,19 @@ registros antiguos sin tiempos inventados. Descargas Edge de JSON/Excel funciona
 en estadísticas, móvil y prefijo Pages. openpyxl abrió las seis hojas y el paquete
 pasó integridad ZIP de lectura; Excel nativo abrió y guardó una copia VALIDADO.
 Muestras ficticias ignoradas en test-results. Procedimiento y biblioteca: EXPORTS.md.
+
+## Banco privado (7/10/2026)
+
+33 pruebas Node, cuatro nuevas para sesión sin claves, payload de progreso limitado,
+revisión/throttle/errores y corrección remota. Validación integral del banco privado
+2018 JSON y CSV por lector Python independiente: todos los campos idénticos.
+PostgreSQL temporal/PGlite con roles: SQL idempotente; SELECT del banco/activos
+denegado a alumno/anon; RPC por dueño/lista; 100 preguntas y cinco opciones; correct:null
+antes de finalizar; CAS, plazo,corrección idempotente y no suplantación con RPC antigua.
+Edge headless aislado con SDK real y backend PostgreSQL temporal comprueba Google,
+rechazo, móvil320 px, progreso recuperado en otro contexto, respuestas nuevas y
+copias de recuperación, fallo de red al finalizar/reintento, resultado servidor,
+estadísticas y JSON/Excel, prefijo Pages y ausencia de requests públicos a data/.
+No se tocó navegador personal ni Supabase real. Scripts temporales fuera del repo.
+No se repitió la validación nativa Office: hojas/tipos/biblioteca no cambiaron;
+se verificó nueva descarga XLSX y tests roundtrip del contenido. No prueba de carga.

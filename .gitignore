@@ -4,3 +4,6 @@ Thumbs.db
 tmp/
 test-results/
 access-private/
+data/
+banco-privado/
+*.csv

@@ -2,11 +2,11 @@
 
 ## Localizar una pregunta
 
-`data/manifest.json` enumera cada ID, materia y archivo. Los IDs conservan la
+`../banco-privado/data/manifest.json` enumera cada ID, materia y archivo. Los IDs conservan la
 numeración del PDF (`CPU-0001` a `CPU-2018`). Para editar una pregunta específica:
 
 ```sh
-rg --files data -g '*CPU-0957.json'
+rg --files ../banco-privado/data -g '*CPU-0957.json'
 ```
 
 Abrir solo el archivo encontrado. No es necesario leer los otros 2.017 archivos.
@@ -61,34 +61,43 @@ Para sustituir un distractor, editar su texto. Para cambiar una respuesta fuente
 registrar el motivo docente; no corregir discrepancias silenciosamente.
 Mantener los IDs y actualizar manifest si se agregan o eliminan registros.
 
-## Selección y descarga
+## Selección privada
 
-Se sortean 100 entradas del índice. Solo sus archivos son descargados. Dentro de
-cada registro se sortean cuatro distractores distintos y se mezclan con `correct`.
-Se copia el resultado final al intento: ni reanudar ni abrir el historial vuelve
-a sortear. No se imponen cuotas por materia ni exclusión de preguntas entre rondas.
-Una pregunta puede aparecer en varios intentos, con opciones diferentes.
+Supabase sortea 100 preguntas distintas, cuatro distractores propios y cinco
+posiciones. Entrega enunciados/opciones seleccionadas con correct:null; mantiene
+la clave privada hasta corregir al finalizar. No se imponen cuotas por materia.
+El alumno no tiene SELECT sobre cean_question_bank ni cean_live_exams. No se
+entrega el catálogo ni los 100 distractores al navegador. Un alumno puede copiar
+lo que ve; PRIVATE_BANK.md explica las copias antiguas en Git y la activación.
 
 ## Extracción y regeneración
 
-`scripts/import-bank.py` utiliza pypdf y conserva el PDF original. Filtra encabezados,
+`../banco-privado/herramientas/import-bank.py` utiliza pypdf y conserva el PDF original. Filtra encabezados,
 pies y límites de área. Recupera preguntas que cruzan páginas. Se corrigieron
 espacios de extracción en los números 1053 y 1241. Exige numeración 1…2018 sin
 duplicados y respuestas no vacías. El rango de materias corresponde a este PDF.
 
-`scripts/distractors.py` conserva la generación inicial reproducible. Las fechas
+`../banco-privado/herramientas/distractors.py` conserva la generación inicial reproducible. Las fechas
 completas se mutan dentro de días válidos del calendario. Los borradores numéricos
 e institucionales siguen requiriendo revisión. No regenerar archivos aprobados.
 
 ```sh
-python scripts/import-bank.py "RUTA_AL_PDF"
+python ../banco-privado/herramientas/import-bank.py "RUTA_AL_PDF"
 ```
 
-El resultado va a `tmp/importado`; **no reemplaza `data` automáticamente**.
+El resultado va a `../banco-privado/tmp/importado`; **no reemplaza el banco automáticamente**.
 El PDF y pypdf no son necesarios para ejecutar la página.
 
 ## Validación técnica
 
 `npm run check` verifica índice, identificadores, materia, páginas, respuestas,
 100 distractores, textos únicos y tamaños. Es integridad técnica, no pedagógica.
-`data/informe-importacion.json` registra cantidades y procedencia de los candidatos.
+`../banco-privado/data/informe-importacion.json` registra cantidades y procedencia de los candidatos.
+
+## Importar y actualizar en Supabase
+
+Ver PRIVATE_BANK.md. npm run prepare:bank genera el CSV inicial fuera de CEAN.
+Para actualizar un ID, generar su archivo SQL con los tres argumentos (ruta de
+banco, salida privada, ID) y ejecutar el UPSERT en SQL Editor. No importar el
+CSV completo sobre una tabla ya poblada. Cambiar JSON local no cambia Supabase
+hasta aplicar esa actualización. No hacer commits públicos de preguntas/incisos.

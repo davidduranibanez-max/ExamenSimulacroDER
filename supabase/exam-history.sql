@@ -28,6 +28,7 @@ declare
   attempt_id uuid;
   saved jsonb;
   score integer;
+  protected_id boolean;
 begin
   if student is null or not public.cean_has_access() then
     raise exception 'Acceso no autorizado' using errcode = '42501';
@@ -48,6 +49,12 @@ begin
     raise exception 'Intento incompleto' using errcode = '22023';
   end if;
   attempt_id := (attempt->>'id')::uuid;
+  if to_regclass('public.cean_live_exams') is not null then
+    execute 'select exists(select 1 from public.cean_live_exams where id=$1 and user_id=$2)'
+      into protected_id using attempt_id,student;
+    if protected_id then raise exception 'Usa cean_finish_exam para exámenes del banco privado' using errcode='42501'; end if;
+  end if;
+  attempt := attempt - 'remote' - 'serverVerified' - 'remoteRevision';
   if attempt_id is null then raise exception 'Falta identificador' using errcode = '22023'; end if;
   select count(*) into score from jsonb_array_elements(attempt->'questions') with ordinality as q(value,n)
     where q.value->'correct' = (attempt->'answers')->(q.n::integer - 1);

@@ -1,179 +1,102 @@
 # CEAN
-Sistema y simulador de examen para practicar el ingreso a la carrera de Derecho
+Sistema y simulador de examen para practicar el ingreso a Derecho.
 
-Para retomar el desarrollo, empezar por [docs/CONTEXT.md](docs/CONTEXT.md).
-Las instrucciones para futuras sesiones están en [AGENTS.md](AGENTS.md).
-Documentación por tema: [arquitectura](docs/ARCHITECTURE.md),
-[banco e incisos](docs/QUESTION_BANK.md) y [verificación](docs/TESTING.md).
+Frontend público en GitHub Pages; Google, banco privado, progreso y resultados en
+Supabase. **Migración privada preparada localmente; falta activar el SQL e importar
+el CSV antes de publicar.** Pasos en [PRIVATE_BANK.md](docs/PRIVATE_BANK.md).
+No se hizo commit ni push desde esta sesión. El banco antiguo todavía está en Git.
+
+Para retomar desarrollo: [CONTEXT.md](docs/CONTEXT.md) y [AGENTS.md](AGENTS.md).
 
 ## Ejecutar en cualquier computadora
 
-Requiere Node.js 20 o posterior. No hay dependencias que instalar ni compilación.
-
-Desde una terminal situada en la carpeta de este repositorio:
+Node.js 20 o posterior. Sin npm install ni build. Desde la carpeta del repositorio:
 
 ```sh
 npm start
 ```
 
-Abre http://localhost:4173. Para usar otro puerto: `node scripts/serve.mjs 8080`.
-También puedes utilizar `python -m http.server 4173` desde la raíz del repositorio.
-Mantén el mismo origen (protocolo, host y puerto) para acceder al historial local.
-No abras `index.html` directamente: el navegador necesita HTTP para leer los JSON.
+Abrir http://localhost:4173. Otro puerto: node scripts/serve.mjs 8080. También sirve python -m http.server 4173. Google requiere registrar el origen/callback correcto
+en Supabase. No abrir index.html como archivo: módulos y SDK necesitan HTTP/HTTPS.
+El banco local no es necesario para ejecutar el frontend; Supabase sí.
 
 ## GitHub Pages
 
-Todo es HTML, CSS, JavaScript y JSON estático. Las rutas son relativas y funcionan
-bajo `https://usuario.github.io/CEAN/` y bajo un dominio propio. No hay rutas de
-servidor ni secretos. Se inicializa un cliente externo de Supabase con configuración
-pública; el acceso se valida con Supabase Auth y los resultados terminados se respaldan en Supabase. `.nojekyll` permite servir los archivos
-directamente.
+HTML/CSS/JS con rutas relativas; publicación actual:
+https://davidduranibanez-max.github.io/ExamenSimulacroDER/.
+Mantener Settings → Pages → Deploy from a branch → main → /(root).
+GitHub Free permite Pages en repositorios públicos. Repositorio/frontend público
+contiene interfaz, módulos, biblioteca Excel y SQL sin datos; nunca el CSV/banco
+ni secretos de administración. GitHub aloja código e interfaz; Supabase ejecuta
+las funciones SQL, autentica y almacena datos. La clave publishable puede ser pública.
 
-Cuando quieras publicar, sube los cambios y selecciona **Settings → Pages →
-Deploy from a branch → main → /(root)** (o la rama que utilices). GitHub ejecuta automáticamente la publicación de Pages; no necesitas escribir
-un workflow propio. El usuario publicó la primera versión. Los cambios de esta
-actualización se prepararon localmente, sin push ni despliegue del asistente.
+Quitamos data/ del árbol actual y conservamos JSON intactos en ../banco-privado.
+**Esto no retira commits, forks, clones o descargas anteriores.** La limpieza de
+historia Git requiere una operación aparte, revisada antes de reescribir/publicar.
+No prometer que un alumno no podrá copiar preguntas que legítimamente ve.
 
-## Banco de preguntas e incisos
+## Banco e incisos
 
-Se extrajeron las **2.018 preguntas y respuestas** del PDF proporcionado por el
-docente. La numeración original y la página del PDF se conservan. Hay ocho materias.
+2018 preguntas, ocho materias, numeración/página del PDF original conservadas.
+Cada JSON privado contiene la respuesta fuente y 100 distractores propios. Los
+201800 candidatos son borradores lingüísticos, pendientes de revisión docente de
+pertinencia, gramática, dificultad y respuesta única. No hay catálogo compartido.
 
-`data/manifest.json` contiene el índice. Cada pregunta tiene un JSON propio, por
-ejemplo `data/historia-bolivia/CPU-0001.json`:
+Cada intento se sortea en Supabase: 100 preguntas distintas, 4 distractores propios
+y 5 opciones A–E en orden aleatorio. La correcta queda en el servidor hasta finalizar.
+Reanudar conserva preguntas/opciones/plazo; una edición no altera intentos anteriores.
+Editar ../banco-privado/data/<materia>/CPU-XXXX.json y aplicar el SQL de actualización;
+procedimiento en [QUESTION_BANK.md](docs/QUESTION_BANK.md).
 
-```json
-{
-  "version": 2,
-  "id": "CPU-0001",
-  "number": 1,
-  "page": 5,
-  "area": "Historia de Bolivia",
-  "question": "Enunciado de la pregunta…",
-  "correct": "Respuesta correcta del PDF.",
-  "distractors": ["Inciso ficticio 1.", "Inciso ficticio 2.", "…"],
-  "review": "pending",
-  "difficulty": "target-high",
-  "generation": "linguistic-draft"
-}
-```
+## Acceso, guardado y resultados
 
-Cada registro contiene **100 distractores propios**, almacenados como textos
-independientes. No hay referencias a respuestas de otras preguntas ni un catálogo
-compartido. Se generaron **201.800 candidatos** mediante mutaciones lingüísticas,
-numéricas y familias de conceptos. **Son borradores, no un banco de alta dificultad
-validado.** Revisa gramática, pertinencia, posibles equivalencias y que solo la
-respuesta de `correct` sea válida. La revisión docente fue reservada por el usuario.
+Entrar con Google; lista privada en cean_authorized_emails. Users muestra cuentas,
+no permisos. No se crean contraseñas del simulador ni registro público. Configuración
+en [GOOGLE_SETUP.md](docs/GOOGLE_SETUP.md) y contrato [SUPABASE.md](docs/SUPABASE.md).
+Cada recarga pide Google y verifica Auth+permiso. Tokens solo en memoria. Perfiles
+antiguos se conservan sin vincularlos automáticamente.
 
-Edita directamente `correct`, `question` o cualquier elemento de `distractors`.
-Después de revisar una pregunta, cambia `review` a `approved` y ajusta `difficulty`
-si corresponde. El simulador admite entre 4 y 100 distractores; el control del banco
-de esta versión comprueba que se mantengan los 100 solicitados.
+Copia local tras cada interacción/cada 5 segundos; progreso remoto cada 15 segundos y al salir.
+Plazo de 60 minutos fijado/aplicado por servidor, sigue al cerrar. Al vencer cuenta
+último progreso recibido por Supabase a tiempo: mantener Internet. Para iniciar
+u obtener nota hace falta conexión. Finalización guarda snapshot/eventos/nota y
+recuperación en otro navegador. Solo el alumno ve sus filas; el docente ve todas
+con el dashboard. [CLOUD_HISTORY.md](docs/CLOUD_HISTORY.md).
 
-Los intentos ya guardados conservan una copia de sus preguntas y opciones: una
-edición posterior del banco no cambia sus resultados. El navegador solo descarga
-los archivos de las 100 preguntas seleccionadas, con ocho solicitudes simultáneas.
+Mapa de 100 círculos, marcado/borrado/navegación libre. Finalizar rojo; revisión verde
+correcta, roja incorrecta y ámbar pendiente. La nota nueva se calcula en Supabase;
+los tiempos de lectura vienen del navegador y no son una certificación de identidad
+ni vigilancia. Históricos anteriores tienen origen legacy-client.
 
-Cada nuevo intento hace tres sorteos con `crypto.getRandomValues`:
+## Mis estadísticas y descargas
 
-1. 100 preguntas distintas del banco completo.
-2. Cuatro distractores distintos de los 100 propios de cada pregunta.
-3. El orden de A–E, incluida la posición de la respuesta correcta.
+Media/mediana/varianza/desviación/mejor nota/cambio/tiempo de respuesta con ayudas con ?
+mouse/teclado/toque. Series temporales, progreso/media móvil, distribución, frecuencia,
+Pearson, día/hora/tramo del reloj. Tablas y detalles; no inventar datos faltantes.
+Se calculan con historial recuperado, sin guardar resúmenes duplicados en la base.
+[ANALYTICS.md](docs/ANALYTICS.md).
 
-Se usa Fisher–Yates y muestreo sin sesgo de módulo. Reanudar conserva el sorteo.
-La selección global no impone cuotas por materia; no se proporcionaron esas cuotas.
+Mi historial y Mis estadísticas → Descargar JSON / Descargar Excel. Paquete JSON v2
+con datos y métricas; XLSX real con seis hojas (Resumen,Intentos,Preguntas,Eventos,
+Distribución,Correlaciones), SheetJS CE 0.20.3 local/diferido. Son copias del momento,
+no conexiones en vivo. [EXPORTS.md](docs/EXPORTS.md).
 
-## Perfiles e historial
+## Diseño y verificaciones
 
-El acceso usa **Entrar con Google**, con una lista de correos autorizados en
-Supabase. El alumno elige su cuenta Google; no se le pide ni entrega una contraseña
-del simulador. El servidor valida la sesión y comprueba su autorización antes de
-mostrar Comenzar. Los correos se pueden importar todos juntos desde CSV.
-
-**Configuración de Google:** seguir [docs/GOOGLE_SETUP.md](docs/GOOGLE_SETUP.md)
-para ejecutar el SQL, activar el hook, conectar Google y registrar las URLs exactas.
-La clave pública sola no habilita Google. Authentication → Users muestra cuentas;
-la lista de acceso es `cean_authorized_emails`, privada para los alumnos.
-
-Cada apertura/recarga pide Entrar con Google. La sesión CEAN vive en memoria;
-Google puede recordar su propia sesión. Al volver se canjea el código PKCE y se
-comprueba `getUser` + permiso remoto. Si falla cualquiera, el acceso queda bloqueado.
-Salir cierra esa sesión. El historial local se identifica por `supabase:<UUID>`.
-Los accesos y perfiles locales antiguos no autorizan y sus datos se conservan.
-
-Los **resultados terminados** se respaldan en Supabase y se recuperan al entrar
-con la misma cuenta en otro dispositivo; se conserva una copia local. El examen
-en curso sigue en este navegador. Activación y acceso docente a los resultados:
-[docs/CLOUD_HISTORY.md](docs/CLOUD_HISTORY.md). Si un resultado está pendiente de
-subir, borrar datos del sitio todavía puede perderlo. Se pueden exportar copias JSON. El banco y
-las respuestas continúan siendo archivos públicos en GitHub Pages: Supabase Auth
-verifica la cuenta, pero no vuelve privados los archivos estáticos.
-
-El progreso se guarda después de cada interacción y cada cinco segundos. Cada nuevo
-examen dura **60 minutos**, desde su inicio. El plazo continúa al salir, cambiar de
-pestaña o recargar; al agotarse, se corrige automáticamente. Si el navegador estaba
-cerrado, el resultado se guarda al volver a abrir el perfil. Los intentos antiguos
-en curso reciben al reanudarse el resto de la hora, descontando su tiempo activo
-ya guardado; se identifican como registros parciales. Las preguntas se pueden responder en cualquier
-orden, marcar, borrar y revisar. Al terminar, las correctas aparecen en verde, las
-incorrectas en rojo y las pendientes en ámbar. Las pendientes no cuentan como aciertos.
-
-## Mis estadísticas
-
-La navegación incorpora **Mis estadísticas**, con media, mediana, varianza,
-desviación estándar, mejor puntuación, cambio desde el primer intento y tiempo
-medio hasta responder. Cada indicador tiene una ayuda con `?`, disponible al pasar
-el mouse, enfocar con teclado o tocar en celular.
-
-Incluye serie temporal por fecha, progreso por número de intento con media móvil
-de tres rondas, distribución de puntuaciones, frecuencia por día, gráficos de
-correlación, aciertos por día y hora y desglose por tramo del temporizador.
-Los gráficos tienen detalles interactivos y tablas con los datos originales.
-La correlación no se calcula cuando faltan observaciones o las variables no varían.
-
-Cada pregunta conserva sus visitas y un evento por selección, cambio o borrado:
-instante en milisegundos, fecha/hora y desplazamiento UTC locales, tiempo visible,
-minuto transcurrido y tiempo restante. Se separa el tiempo hasta la respuesta final
-del tiempo visible total. No se fabrican tiempos para historiales anteriores.
-Todo se calcula sobre el historial del perfil, en el navegador, sin subir datos.
-
-Detalles de medidas, esquema y migración: [docs/ANALYTICS.md](docs/ANALYTICS.md).
-
-## Diseño y accesibilidad
-
-Interfaz adaptable a PC y celular, mapa lateral en PC y desplegable en celular.
-Fuentes normales, geometría pixelada y fondo con el Juego de la Vida de Conway,
-con controles de pausa y reinicio. Respeta la preferencia de movimiento reducido.
-La interfaz no depende de fuentes remotas, imágenes ni bibliotecas de interfaz.
-La conexión a Supabase carga su SDK desde un CDN y necesita Internet. Si falla,
-se muestra un error de acceso y se conservan los datos locales. Alcance y configuración: [docs/SUPABASE.md](docs/SUPABASE.md).
-
-Se consultó la skill Pixel Art Sprites de omer-metin/skills-for-antigravity:
-https://skills.sh/omer-metin/skills-for-antigravity/pixel-art-sprites
-La copia de la skill se encuentra fuera del repositorio, en la carpeta de trabajo.
-
-## Comprobaciones
+PC/celular, 2D pixelado con fuentes normales,Conway real detrás,pausa/reinicio,
+foco visible,radios nativos,mapa móvil,movimiento reducido y textos escapados.
+CDN solo SDK Supabase, sin fuentes ni conversores remotos. Arquitectura:
+[ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ```sh
 npm run check
 npm test
+npm run prepare:bank
 ```
 
-El primer comando valida los 2.018 JSON, sus IDs, los 100 distractores y los tamaños.
-Las pruebas cubren sorteos, posiciones correctas, corrección, reanudación y reglas
-del Juego de la Vida, plazos, eventos de respuesta, compatibilidad con intentos
-antiguos y cálculos estadísticos. La validez pedagógica requiere revisión humana.
-
-`scripts/import-bank.py` conserva el procedimiento de extracción y generación.
-Requiere Python y `pypdf` **solo si deseas regenerar el banco**, nunca para ejecutar
-el sitio. El PDF original se conserva intacto y no se incorpora al repositorio.
-La regeneración escribe en `tmp/importado`, para revisar antes de reemplazar `data`.
-
-## Descargar rendimiento
-
-En **Mi historial** o **Mis estadísticas**, elegir **Descargar JSON** para el
-paquete completo con historial, tiempos y métricas, o **Descargar Excel** para
-convertirlo directamente en un XLSX con Resumen, Intentos, Preguntas, Eventos,
-Distribución y Correlaciones. El alumno descarga su propio perfil. Cada archivo
-refleja el momento de la descarga; puede generar uno nuevo al acumular exámenes.
-No instala programas ni usa servicios de conversión. Detalles: [EXPORTS.md](docs/EXPORTS.md).
+check verifica frontend sin banco/CSV/secretos y banco privado si está disponible;
+check:bank acepta ruta privada explícita. prepare:bank genera CSV fuera del repo
+para Table Editor. 33 pruebas Node y backend PostgreSQL/Edge aislados pasan; pruebas
+de carga de 100 alumnos y activación real pendientes. [TESTING.md](docs/TESTING.md).
+PDF original intacto fuera del repositorio; generadores originales preservados en
+../banco-privado/herramientas,solo requieren Python/pypdf si se regenera el banco.

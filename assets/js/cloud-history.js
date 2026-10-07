@@ -39,7 +39,10 @@ export function createCloudHistory(getClient) {
     for (const exam of history) {
       if (state.exams.has(exam.id)) continue;
       if (!validExam(exam) || !Number.isFinite(exam.completedAt)) throw new Error('Solo se respaldan exámenes terminados válidos.');
-      const { data, error } = await client.rpc('cean_save_attempt', { attempt: exam }).abortSignal(AbortSignal.timeout(15000));
+      const response = exam.remote
+        ? await client.from('cean_exam_attempts').select('id,exam').eq('user_id',uid).eq('id',exam.id).maybeSingle().abortSignal(AbortSignal.timeout(15000))
+        : await client.rpc('cean_save_attempt', { attempt: exam }).abortSignal(AbortSignal.timeout(15000));
+      const error = response.error, data = exam.remote ? response.data?.exam : response.data;
       if (error) throw error;
       if (data?.id !== exam.id || !validExam(data) || !Number.isFinite(data.completedAt)) throw new Error('Supabase no confirmó el guardado.');
       state.exams.set(exam.id, data);

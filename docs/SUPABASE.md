@@ -46,21 +46,24 @@ Client Secret de Google se guarda únicamente en Supabase, nunca en la página.
 ## Datos y límites
 
 IndexedDB guarda la copia local por `supabase:<UUID>`; Supabase respalda resultados
-terminados y permite recuperarlos en otro dispositivo. El examen en curso sigue
-local. El docente consulta `cean_exam_attempts` en el dashboard; no hay panel docente
+terminados y permite recuperarlos en otro dispositivo. El nuevo progreso en curso
+también se sincroniza al activar PRIVATE_BANK.md. El docente consulta `cean_exam_attempts` en el dashboard; no hay panel docente
 propio. Leer CLOUD_HISTORY.md. Se preservan todos los perfiles/históricos
 anteriores, sin vinculación automática. Si Google enlaza una cuenta Auth existente
 con el mismo email verificado, conservará su UUID; verificar ese caso en el proyecto.
 
-El banco y las respuestas siguen públicos en GitHub Pages. Google y Supabase
-impiden acceso normal sin cuenta autorizada, pero no convierten los archivos
-estáticos en privados ni impiden prestar cuentas/sesiones. No afirmar lo contrario.
+Para nuevos intentos, private-bank.sql mantiene banco y claves en Supabase.
+Frontend/archivos estáticos siguen públicos; el alumno puede copiar preguntas
+que recibe legítimamente. El banco viejo sigue en commits/forks anteriores.
+No confundir autenticación con impedir prestar una cuenta Google o sesión.
+Activación privada y límites en PRIVATE_BANK.md.
 
 ## Validación
 
-29 pruebas Node del motor, tiempos, estadísticas, servicio de acceso, PKCE y CSV.
+33 pruebas Node del motor, tiempos, estadísticas, servicio de acceso, PKCE y RPC privadas.
 PostgreSQL temporal: SQL idempotente, RLS/privilegios, OAuth autorizado, rechazo
 de contraseña/baja/identidad distinta, anon y hook. Edge aislado con SDK real y
 respuestas OAuth/Auth/RPC simuladas prueba el viaje PKCE, rechazos y el simulador.
-Los detalles están en TESTING.md. El docente confirmó el acceso Google real; el nuevo SQL de resultados está pendiente
-de aplicar. En las pruebas automatizadas no se usaron cuentas/contraseñas reales.
+Los detalles están en TESTING.md. El docente confirmó Google y ejecutó el SQL de
+resultados. SQL privado/importación del banco siguen pendientes. En las pruebas
+automatizadas no se usaron cuentas/contraseñas reales ni se modificó Supabase real.
