@@ -15,6 +15,16 @@ No se usaron cuentas/contraseñas reales, ni se crearon usuarios o tablas remota
 Pendiente: el docente debe probar su cuenta existente en localhost antes del push.
 Las 13 pruebas Node continúan verificando el motor y las estadísticas.
 
+Comprobación posterior de la publicación del commit `8c1c207` en
+`https://davidduranibanez-max.github.io/ExamenSimulacroDER/`: en un navegador
+limpio aparece correo/contraseña, sin formulario de username ni acceso al botón
+Comenzar. Una sesión local antigua tampoco permite entrar. Auth mantiene email
+habilitado y registro público cerrado. Captura local ignorada:
+`test-results/published-email-auth.png`. Una sesión Supabase válida todavía se
+restaura al recargar; no se obliga a repetir contraseña en cada visita.
+Esto no es un control de acceso del alojamiento: index.html y el banco siguen
+siendo públicos en GitHub Pages. No se inspeccionó la sesión del Chrome del usuario.
+
 ## Comandos portables del repositorio
 
 ```sh
@@ -127,3 +137,15 @@ volver sin reiniciar la hora; al finalizar entrar en Mis estadísticas, abrir la
 ayudas, pasar por los puntos y desplegar tablas de intentos y preguntas. Comprobar
 el botón rojo en PC y móvil. Los históricos que no registraban tiempos muestran
 «sin registro». El banco no cambió en esta actualización.
+
+## Cambio local: pedir acceso en cada apertura o recarga
+
+Se desactivó la persistencia de Auth y el arranque muestra siempre el formulario.
+Edge/SDK real con respuestas Auth simuladas comprobó recarga con petición de
+credenciales, contraseña incorrecta, token rechazado, examen, estadísticas,
+UUID distintos, datos antiguos conservados, fallo de CDN y móvil/prefijo Pages.
+Se mantiene la prueba de rechazo real con una cuenta inexistente en Supabase.
+Estas comprobaciones no usaron credenciales reales ni cambiaron usuarios remotos.
+La conversación compartida completa confirmó que no se debe añadir OTP ni cambiar
+hosting. Los detalles anteriores de sesiones restauradas describen la versión
+publicada antes de este cambio local, no el comportamiento nuevo.

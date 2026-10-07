@@ -91,9 +91,10 @@ proyecto y no hay formulario de alta. Las cuentas se gestionan en **Supabase →
 Authentication → Users**; al crearlas se puede marcar **Auto Confirm User** y
 asignar una contraseña individual. No se necesitan códigos por correo ni SMTP.
 
-El formulario llama a `signInWithPassword`; al entrar y al recargar se consulta
-`getUser` para verificar la sesión contra el servidor. La sesión se mantiene en
-sessionStorage por pestaña y el SDK renueva sus tokens. **Salir** cierra esa sesión.
+El formulario llama a `signInWithPassword`; al entrar se consulta `getUser`
+para verificar la sesión contra el servidor. Cada apertura o recarga muestra el
+formulario; la sesión queda en memoria y el SDK renueva sus tokens mientras la
+página permanece abierta. **Salir** cierra esa sesión.
 Si falla el servicio, el acceso queda bloqueado; no se recurre a credenciales locales.
 
 Los nombres DavidDuranIbañez y SoledadMachaca y sus claves locales anteriores ya no

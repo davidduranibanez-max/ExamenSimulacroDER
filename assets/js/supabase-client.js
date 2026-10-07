@@ -7,11 +7,12 @@ export const supabaseReady = initializeSupabase();
 async function initializeSupabase() {
   try {
     const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm');
+    // Retirar únicamente la sesión del SDK anterior; conservar perfiles e historiales.
+    sessionStorage.removeItem('cean.supabase.auth.v1');
     const client = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       auth: {
-        storage: sessionStorage,
         storageKey: 'cean.supabase.auth.v1',
-        persistSession: true,
+        persistSession: false,
         autoRefreshToken: true,
         detectSessionInUrl: false,
       },

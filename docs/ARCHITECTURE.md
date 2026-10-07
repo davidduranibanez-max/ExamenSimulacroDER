@@ -27,7 +27,7 @@ de bancos e intentos y formato de tiempo. Sirve tanto al sitio como al validador
 Node y las pruebas.
 
 **auth.js** valida correo y contraseña en Supabase Auth y verifica sesiones con
-`getUser`. La sesión del SDK usa sessionStorage y renovación de tokens. Los errores
+`getUser`. La sesión del SDK usa memoria y renovación de tokens; al abrir/recargar se pide acceso. Los errores
 de red no permiten acceso local alternativo; no hay alta pública. **storage.js**
 administra IndexedDB y Web Locks por UUID remoto; no contiene autenticación local.
 Los perfiles antiguos permanecen intactos y no se vinculan automáticamente a cuentas.
@@ -74,7 +74,7 @@ filtros de resultados afectan la revisión, no la calificación.
 | Medio | Clave/objeto | Contenido |
 |---|---|---|
 | localStorage | `cean.exam.v1.users` | Registro antiguo conservado; no autoriza el acceso |
-| sessionStorage | `cean.supabase.auth.v1` | Sesión Auth del SDK por pestaña |
+| Memoria del SDK | Sesión Supabase | Activa hasta cerrar/recargar; sin restauración automática |
 | IndexedDB | `cean-exam-v1` / `profiles` / clave userId | `{ active, history }` |
 | Web Locks | `cean.exam.v1.<userId>` | Exclusión del examen mientras está abierto |
 

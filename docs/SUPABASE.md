@@ -18,11 +18,11 @@ publicarse. Nunca incluir secret, service_role o contraseñas de base de datos.
 
 - `index.html` y `app.js` cargan módulos con rutas relativas.
 - `supabase-client.js` exporta `supabaseReady`: SDK 2.117.2 por CDN jsDelivr,
-  sin build ni npm install. Su sesión usa sessionStorage, clave
-  `cean.supabase.auth.v1`, persistencia y renovación automática de tokens.
+  sin build ni npm install. Su sesión usa memoria (`persistSession: false`) y renovación automática de
+  tokens. Se retira únicamente la sesión antigua `cean.supabase.auth.v1`.
 - `auth.js` llama a `signInWithPassword({email, password})` y después a `getUser`.
-  Para restaurar una sesión primero consulta `getSession` y después verifica
-  `getUser` con Auth. Exige ID, correo y `email_confirmed_at`.
+  Para verificar la sesión recién iniciada consulta `getSession` y después
+  `getUser` con Auth. No se restaura una sesión para entrar automáticamente al abrir. Exige ID, correo y `email_confirmed_at`.
 - Los datos guardados en el navegador, incluyendo la sesión local antigua,
   no son una autorización. No hay fallback al acceso local si falla la red/CDN.
 - `app.js` muestra errores genéricos de credenciales, correo no habilitado,
@@ -70,7 +70,7 @@ propio. No afirmar que los datos se migraron o sincronizaron.
 1. Ejecutar `npm start` y abrir http://localhost:4173.
 2. Comprobar que aparece **Correo electrónico**, sin alta pública.
 3. Entrar con la contraseña de la cuenta de Supabase, no con el username antiguo.
-4. Recargar: la sesión debe validarse contra Auth y conservar el historial de ese UUID.
+4. Recargar: debe reaparecer el formulario. Volver a entrar conserva el historial del UUID.
 5. Pulsar Salir: vuelve al formulario. Probar contraseña incorrecta: debe bloquear.
 6. Hacer commit y push desde VS Code. El cambio no llega a Pages hasta publicarlo.
 
@@ -81,3 +81,10 @@ Los detalles y límites están en `TESTING.md`.
 Referencias oficiales: [acceso por contraseña](https://supabase.com/docs/reference/javascript/auth-signinwithpassword),
 [verificación remota del usuario](https://supabase.com/docs/reference/javascript/auth-getuser),
 [claves públicas](https://supabase.com/docs/guides/getting-started/api-keys).
+
+## Decisiones confirmadas tras leer la conversación completa
+
+Se descartaron códigos por correo/OTP, SMTP/Brevo y Google OAuth. El acuerdo final
+es correo + contraseña individual con Supabase y GitHub Pages. El usuario acepta
+el modelo simple contra acceso casual por enlace; no hay garantía contra compartir
+credenciales ni contra inspeccionar archivos públicos. No crear un alojamiento nuevo.

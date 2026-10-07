@@ -30,7 +30,8 @@ usuario. El asistente no hace push ni publica. La revisión docente sigue pendie
 Acceso vigente: **correo + contraseña mediante Supabase Auth**. Se sustituyó
 el formulario de username y la sesión local: solo cuentas existentes, correo
 confirmado, validación remota con `getUser`, sin alta pública, SMTP ni OTP.
-El SDK guarda su sesión en sessionStorage; una sesión local antigua no autoriza.
+La sesión del SDK permanece en memoria; cada apertura/recarga pide credenciales.
+Una sesión local antigua no autoriza.
 Los nombres DavidDuranIbañez y SoledadMachaca ya no son accesos vigentes.
 No se crearon ni modificaron cuentas remotas durante esta implementación.
 Los datos de los perfiles antiguos se preservan, sin asociación automática a correos.
@@ -39,6 +40,21 @@ Flujo: **acceso Supabase sin registro → landing → examen de 100 preguntas / 
 → resultados → historial y Mis estadísticas**.
 Hay guardado automático, reanudación, marcado para revisar, borrado de respuesta,
 corrección por pregunta, estadísticas por área y exportación JSON.
+
+## Acuerdo definitivo de autenticación (conversación compartida completa)
+
+Se releyeron todos los mensajes textuales disponibles de la conversación compartida,
+no solamente su último paso. El usuario había descartado OTP/códigos por correo,
+SMTP/Brevo y Google OAuth por complejidad y aceptado finalmente correo + contraseña
+individual en Supabase Auth, con registro público cerrado y usuarios precreados.
+Mantener GitHub Pages; Supabase únicamente autentica. El usuario pidió expresamente
+no implementar un alojamiento nuevo. No crear Workers, migrar hosting, añadir SMTP,
+OTP, tablas ni Storage como consecuencia implícita de una consulta de seguridad.
+
+El objetivo aceptado allí es impedir acceso casual por reenvío del enlace; no
+prometer impedir compartir voluntariamente credenciales ni proteger archivos que
+siguen públicos. El cambio local pendiente exige el formulario al abrir/recargar,
+sin restaurar automáticamente una sesión del SDK; los historiales se conservan.
 
 ## Requisitos vigentes
 

@@ -234,11 +234,8 @@ async function boot() {
     const response = await fetch(new URL('../../data/manifest.json', import.meta.url));
     if (!response.ok) throw new Error('No se pudo cargar el catálogo de preguntas. Inicia un servidor local; no abras index.html directamente.');
     manifest = await response.json();
-    let accessError;
-    try { user = await auth.restoreSession(); }
-    catch (error) { user = null; accessError = error.message; }
-    if (user) await renderLanding(); else renderAuth();
-    if (accessError) { const element = document.querySelector('#auth-error'); element.textContent = accessError; element.hidden = false; }
+    // Cada apertura o recarga requiere correo y contraseña, incluso con sesión previa.
+    user = null; renderAuth();
     void auth.onSessionEnded(async () => {
       if (!user) return;
       if (active) {
@@ -248,7 +245,11 @@ async function boot() {
       }
       user = null; profile = null; renderAuth();
       toast('Tu sesión terminó. Inicia sesión para continuar.');
-    }).catch(() => {});
+    }).catch(error => {
+      if (view !== 'auth') return;
+      const element = document.querySelector('#auth-error');
+      element.textContent = error.message; element.hidden = false;
+    });
   } catch (error) { main.innerHTML = `<section class="error-card"><h1>No pudimos iniciar el simulador.</h1><p>${e(error.message)}</p>${button('Reintentar', 'retry', 'btn-primary')}</section>`; }
 }
 void boot();
