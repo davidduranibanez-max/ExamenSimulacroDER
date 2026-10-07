@@ -84,27 +84,7 @@ async function derive(password, salt) {
   const bytes = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: Uint8Array.from(salt), iterations: 210000, hash: 'SHA-256' }, key, 256);
   return Array.from(new Uint8Array(bytes));
 }
-export async function registerUser(name, username, password) {
-  username = normalizeUsername(username);
-  name = name.trim();
-  if (name.length < 2 || name.length > 50) throw new Error('El nombre debe tener entre 2 y 50 caracteres.');
-  if (!/^[\p{L}\p{N}._-]{3,40}$/u.test(username)) throw new Error('Usa de 3 a 40 letras, números, puntos, guiones o guiones bajos para el usuario.');
-  if (password.length < 8 || password.length > 200) throw new Error('La contraseña debe tener entre 8 y 200 caracteres.');
-  const users = getUsers();
-  if (users.some(user => user.username === username)) throw new Error('Ese usuario ya existe en este navegador.');
-  const salt = Array.from(crypto.getRandomValues(new Uint8Array(16)));
-  const hash = await derive(password, salt);
-  const user = { id: crypto.randomUUID(), name, username, salt, hash, createdAt: Date.now() };
-  const persist = () => {
-    const latest = getUsers();
-    if (latest.some(u => u.username === username)) throw new Error('Ese usuario ya existe en este navegador.');
-    write('users', [...latest, user]);
-  };
-  if (navigator.locks) await navigator.locks.request(PREFIX + 'registry', persist);
-  else persist();
-  login(user);
-  return user;
-}
+// Public self-registration is intentionally unavailable. Existing profiles are preserved.
 export async function authenticate(username, password) {
   const user = getUsers().find(u => u.username === normalizeUsername(username));
   if (!user) throw new Error('Usuario o contraseña incorrectos.');

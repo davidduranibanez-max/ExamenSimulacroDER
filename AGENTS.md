@@ -6,6 +6,9 @@
 2. Consultar `docs/ARCHITECTURE.md` solo si cambia el comportamiento de la aplicación.
 3. Consultar `docs/QUESTION_BANK.md` solo si cambia el banco o los sorteos.
 4. Consultar `docs/TESTING.md` antes de verificar cambios.
+5. Consultar `docs/ANALYTICS.md` si cambian temporizador, eventos o estadísticas.
+6. Consultar `docs/SUPABASE.md` para la conexión externa autorizada: por ahora
+   solo inicialización; cuentas e historial siguen siendo locales.
 
 No leer el banco completo ni el PDF para cambios de interfaz. Buscar un ID con `rg`
 y abrir únicamente sus JSON. `data/manifest.json` permite localizar cualquier registro.
@@ -22,6 +25,9 @@ y abrir únicamente sus JSON. `data/manifest.json` permite localizar cualquier r
 - Dificultad objetivo alta. Los incisos actuales son **borradores generados**; el usuario
   es el docente y se reservó la revisión. No afirmar que están pedagógicamente validados.
 - Acceso y datos locales por perfil, guardado automático, reanudación e historial.
+- Sin registro público. Mis estadísticas usa únicamente el historial del perfil.
+- Plazo persistente de 60 minutos; no se reinicia ni pausa al salir o recargar.
+- Conservar eventos de respuesta y tiempos; nunca inventar mediciones antiguas.
 - PC y celular, mapa de 100 círculos y revisión verde/roja al terminar.
 - Documentar cambios para permitir lectura progresiva en futuras sesiones.
 

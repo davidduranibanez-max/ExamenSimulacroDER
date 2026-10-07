@@ -51,7 +51,7 @@ o repetir el recorrido manual descrito debajo.
 
 ## Recorrido manual mínimo después de cambios de flujo
 
-1. Abrir localhost, crear un perfil y entrar.
+1. Abrir localhost y entrar con una cuenta existente; no debe aparecer registro.
 2. Comenzar; comprobar 100 preguntas, cinco opciones y navegador de círculos.
 3. Responder, cambiar, borrar y marcar; navegar a preguntas lejanas.
 4. Volver al inicio, recargar y continuar; comprobar que nada se remezcló.
@@ -75,3 +75,40 @@ No certifica dificultad, corrección jurídica, ambigüedad ni pertinencia de lo
 201.800 candidatos. Eso corresponde al docente. Tampoco confirma publicación en
 GitHub Pages; esta entrega es local. No se probó recuperación/sincronización porque
 no existen esos servicios en esta versión.
+
+## Actualización: temporizador y estadísticas (6 de octubre de 2026)
+
+`tests/analytics.test.mjs` añade seis pruebas (13 en total): plazo fijo a través de
+recargas, rechazo de respuestas fuera de tiempo, hora final exacta del vencimiento,
+selecciones/cambios/borrado, tiempo visible por pregunta, reloj que retrocede,
+migración de intentos antiguos, medianas/varianza/Pearson/histograma con valores
+conocidos y combinación de históricos sin inventar tiempos ni mutarlos.
+
+Prueba Edge/Playwright, con reloj simulado y contextos desechables: acceso sin
+registro, 60 minutos, tiempos y cambios, reanudación/recarga, dos pestañas,
+finalización manual y automática, vencimiento fuera del examen y archivado al
+volver, historial antiguo, gráficos, ayudas con mouse/teclado/toque, aislamiento
+de David/Soledad y responsive 1440/390/320 px. Repetida bajo `/CEAN/` para comprobar
+las rutas relativas. Se simuló una pestaña oculta para excluir su tiempo de lectura
+y un fallo de guardado al vencer: respuestas bloqueadas, reintento exitoso e
+historial sin duplicados. No se tocaron datos del navegador personal del usuario.
+Capturas `test-results/analytics-*.png`, inspeccionadas visualmente.
+
+## Conexión inicial a Supabase (7 de octubre de 2026)
+
+La URL y clave publishable respondieron HTTP 200 en `/auth/v1/settings`:
+correo habilitado, registro desactivado. Edge headless en un contexto desechable
+cargó el SDK real desde jsDelivr y creó el cliente con la URL esperada. En otra
+prueba se bloqueó el CDN: la promesa devolvió `null` y tanto acceso local como
+Mis estadísticas siguieron disponibles. Sin errores no capturados de JavaScript.
+Pasaron las 13 pruebas Node, la revisión de sintaxis de los dos módulos nuevos
+y `git diff --check`. El script de navegador es local, fuera del repositorio.
+No se verificaron autenticación remota ni guardado de exámenes en Supabase:
+esas funciones todavía no están implementadas. No se tocaron usuarios ni tablas
+remotas, ni los datos del navegador personal.
+
+Manual: comprobar que el reloj baja; seleccionar y cambiar respuestas; salir y
+volver sin reiniciar la hora; al finalizar entrar en Mis estadísticas, abrir las
+ayudas, pasar por los puntos y desplegar tablas de intentos y preguntas. Comprobar
+el botón rojo en PC y móvil. Los históricos que no registraban tiempos muestran
+«sin registro». El banco no cambió en esta actualización.

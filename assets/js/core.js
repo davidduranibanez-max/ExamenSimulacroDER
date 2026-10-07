@@ -1,3 +1,4 @@
+import { initializeTiming, EXAM_DURATION_MS } from './timing.js';
 export const EXAM_SIZE = 100;
 export const LETTERS = 'ABCDE';
 
@@ -41,8 +42,8 @@ export function createExam(pool, pick = randomInt, now = Date.now()) {
     return { id: q.id, number: q.number, page: q.page, area: q.area, question: q.question,
       options, correct: options.indexOf(q.correct) };
   });
-  return { id: crypto.randomUUID(), startedAt: now, updatedAt: now, elapsedMs: 0, current: 0,
-    questions, answers: Array(EXAM_SIZE).fill(null), marked: Array(EXAM_SIZE).fill(false) };
+  return initializeTiming({ schemaVersion: 2, id: crypto.randomUUID(), startedAt: now, updatedAt: now, elapsedMs: 0, current: 0,
+    questions, answers: Array(EXAM_SIZE).fill(null), marked: Array(EXAM_SIZE).fill(false) }, now);
 }
 
 export function gradeExam(exam) {
@@ -64,6 +65,8 @@ export function gradeExam(exam) {
 
 export function validExam(exam) {
   if (!exam || !Array.isArray(exam.questions) || exam.questions.length !== EXAM_SIZE || !Array.isArray(exam.answers) || exam.answers.length !== EXAM_SIZE || !Array.isArray(exam.marked) || exam.marked.length !== EXAM_SIZE) return false;
+  if (exam.timingVersion !== undefined && (exam.timingVersion !== 1 || exam.timeLimitMs !== EXAM_DURATION_MS || !Number.isFinite(exam.deadlineAt) || !Number.isFinite(exam.observedAt) || !Array.isArray(exam.questionTimes) || exam.questionTimes.length !== EXAM_SIZE || !['complete', 'partial'].includes(exam.timingCoverage) ||
+    exam.questionTimes.some(q => !Number.isFinite(q.activeMs) || q.activeMs < 0 || !Array.isArray(q.events) || q.events.some(event => !Number.isFinite(event.at) || !Number.isFinite(event.activeMs) || event.activeMs < 0 || !Number.isFinite(event.elapsedMs) || event.elapsedMs < 0 || event.elapsedMs > EXAM_DURATION_MS || !Number.isFinite(event.remainingMs) || event.remainingMs < 0 || event.remainingMs > EXAM_DURATION_MS || !Number.isInteger(event.weekday) || event.weekday < 0 || event.weekday > 6 || !Number.isInteger(event.hour) || event.hour < 0 || event.hour > 23 || !Number.isFinite(event.utcOffsetMinutes) || typeof event.localDay !== 'string' || (event.kind !== 'answer' && event.kind !== 'clear') || (event.answer !== null && (!Number.isInteger(event.answer) || event.answer < 0 || event.answer > 4)))))) return false;
   return Number.isInteger(exam.current) && exam.current >= 0 && exam.current < EXAM_SIZE && Number.isFinite(exam.elapsedMs) && exam.elapsedMs >= 0 &&
     new Set(exam.questions.map(q => q.id)).size === EXAM_SIZE && exam.questions.every(q => q.question && q.options?.length === 5 && Number.isInteger(q.correct) && q.correct >= 0 && q.correct < 5) &&
     exam.answers.every(a => a === null || (Number.isInteger(a) && a >= 0 && a < 5));

@@ -25,12 +25,14 @@ No abras `index.html` directamente: el navegador necesita HTTP para leer los JSO
 
 Todo es HTML, CSS, JavaScript y JSON estático. Las rutas son relativas y funcionan
 bajo `https://usuario.github.io/CEAN/` y bajo un dominio propio. No hay rutas de
-servidor, secretos ni APIs externas. `.nojekyll` permite servir los archivos
+servidor ni secretos. Se inicializa un cliente externo de Supabase con configuración
+pública; el acceso y el historial siguen siendo locales. `.nojekyll` permite servir los archivos
 directamente.
 
 Cuando quieras publicar, sube los cambios y selecciona **Settings → Pages →
-Deploy from a branch → main → /(root)** (o la rama que utilices). No hace falta
-GitHub Actions. Esta versión se dejó local: no se hizo push ni publicación.
+Deploy from a branch → main → /(root)** (o la rama que utilices). GitHub ejecuta automáticamente la publicación de Pages; no necesitas escribir
+un workflow propio. El usuario publicó la primera versión. Los cambios de esta
+actualización se prepararon localmente, sin push ni despliegue del asistente.
 
 ## Banco de preguntas e incisos
 
@@ -88,7 +90,9 @@ Hay dos accesos iniciales solicitados por el docente: **DavidDuranIbañez** y
 no se escribe en este repositorio. Se inicializan en cada navegador nuevo y no
 reemplazan usuarios existentes. El acceso acepta ñ y no distingue mayúsculas.
 
-El registro y el acceso son locales. Las contraseñas se derivan con PBKDF2-SHA256,
+El acceso es local. El registro público se eliminó: solo hay inicio de sesión.
+Los perfiles existentes se conservan y las cuentas iniciales se administran mediante
+`assets/data/profiles.json`, con verificadores derivados y sin contraseñas en texto claro. Las contraseñas se derivan con PBKDF2-SHA256,
 sal aleatoria y 210.000 iteraciones; no se guardan en texto claro. La sesión utiliza
 sessionStorage y los intentos e historial se guardan por perfil en IndexedDB.
 Web Locks evita modificar el mismo examen desde dos pestañas al mismo tiempo.
@@ -100,17 +104,44 @@ contraseñas por correo. Usa una contraseña exclusiva. Borrar los datos del sit
 elimina los perfiles e historial. Los botones **Guardar copia** y **Guardar historial**
 permiten exportarlos a JSON; esta primera versión no importa esas copias.
 
-El progreso se guarda después de cada interacción y cada cinco segundos. El reloj
-mide el tiempo activo sin límite. Las preguntas se pueden responder en cualquier
+El progreso se guarda después de cada interacción y cada cinco segundos. Cada nuevo
+examen dura **60 minutos**, desde su inicio. El plazo continúa al salir, cambiar de
+pestaña o recargar; al agotarse, se corrige automáticamente. Si el navegador estaba
+cerrado, el resultado se guarda al volver a abrir el perfil. Los intentos antiguos
+en curso reciben al reanudarse el resto de la hora, descontando su tiempo activo
+ya guardado; se identifican como registros parciales. Las preguntas se pueden responder en cualquier
 orden, marcar, borrar y revisar. Al terminar, las correctas aparecen en verde, las
 incorrectas en rojo y las pendientes en ámbar. Las pendientes no cuentan como aciertos.
+
+## Mis estadísticas
+
+La navegación incorpora **Mis estadísticas**, con media, mediana, varianza,
+desviación estándar, mejor puntuación, cambio desde el primer intento y tiempo
+medio hasta responder. Cada indicador tiene una ayuda con `?`, disponible al pasar
+el mouse, enfocar con teclado o tocar en celular.
+
+Incluye serie temporal por fecha, progreso por número de intento con media móvil
+de tres rondas, distribución de puntuaciones, frecuencia por día, gráficos de
+correlación, aciertos por día y hora y desglose por tramo del temporizador.
+Los gráficos tienen detalles interactivos y tablas con los datos originales.
+La correlación no se calcula cuando faltan observaciones o las variables no varían.
+
+Cada pregunta conserva sus visitas y un evento por selección, cambio o borrado:
+instante en milisegundos, fecha/hora y desplazamiento UTC locales, tiempo visible,
+minuto transcurrido y tiempo restante. Se separa el tiempo hasta la respuesta final
+del tiempo visible total. No se fabrican tiempos para historiales anteriores.
+Todo se calcula sobre el historial del perfil, en el navegador, sin subir datos.
+
+Detalles de medidas, esquema y migración: [docs/ANALYTICS.md](docs/ANALYTICS.md).
 
 ## Diseño y accesibilidad
 
 Interfaz adaptable a PC y celular, mapa lateral en PC y desplegable en celular.
 Fuentes normales, geometría pixelada y fondo con el Juego de la Vida de Conway,
 con controles de pausa y reinicio. Respeta la preferencia de movimiento reducido.
-No depende de fuentes remotas, CDN, imágenes ni bibliotecas de interfaz.
+La interfaz no depende de fuentes remotas, imágenes ni bibliotecas de interfaz.
+La conexión inicial a Supabase carga su SDK desde un CDN; si falla, el simulacro
+local sigue disponible. Alcance y configuración: [docs/SUPABASE.md](docs/SUPABASE.md).
 
 Se consultó la skill Pixel Art Sprites de omer-metin/skills-for-antigravity:
 https://skills.sh/omer-metin/skills-for-antigravity/pixel-art-sprites
@@ -125,7 +156,8 @@ npm test
 
 El primer comando valida los 2.018 JSON, sus IDs, los 100 distractores y los tamaños.
 Las pruebas cubren sorteos, posiciones correctas, corrección, reanudación y reglas
-del Juego de la Vida. La validez pedagógica requiere revisión humana.
+del Juego de la Vida, plazos, eventos de respuesta, compatibilidad con intentos
+antiguos y cálculos estadísticos. La validez pedagógica requiere revisión humana.
 
 `scripts/import-bank.py` conserva el procedimiento de extracción y generación.
 Requiere Python y `pypdf` **solo si deseas regenerar el banco**, nunca para ejecutar
