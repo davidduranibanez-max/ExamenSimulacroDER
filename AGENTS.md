@@ -7,8 +7,9 @@
 3. Consultar `docs/QUESTION_BANK.md` solo si cambia el banco o los sorteos.
 4. Consultar `docs/TESTING.md` antes de verificar cambios.
 5. Consultar `docs/ANALYTICS.md` si cambian temporizador, eventos o estadísticas.
-6. Consultar `docs/SUPABASE.md` para Google OAuth y lista de correos autorizados en Supabase;
-   los historiales siguen siendo locales.
+6. Consultar `docs/EXPORTS.md` para paquete JSON, Excel y biblioteca local (no editar vendor).
+7. Consultar `docs/SUPABASE.md` para Google OAuth y lista de correos autorizados en Supabase;
+   leer `docs/CLOUD_HISTORY.md` para respaldo de resultados terminados y activación SQL.
 
 No leer el banco completo ni el PDF para cambios de interfaz. Buscar un ID con `rg`
 y abrir únicamente sus JSON. `data/manifest.json` permite localizar cualquier registro.
@@ -24,7 +25,7 @@ y abrir únicamente sus JSON. `data/manifest.json` permite localizar cualquier r
   a respuestas de otras preguntas. En cada intento seleccionar cuatro y mezclar A–E.
 - Dificultad objetivo alta. Los incisos actuales son **borradores generados**; el usuario
   es el docente y se reservó la revisión. No afirmar que están pedagógicamente validados.
-- Acceso Google OAuth + lista privada de correos en Supabase; datos locales por UUID remoto.
+- Acceso Google OAuth + lista privada; resultados terminados respaldados en Supabase con copia local por UUID.
 - Sin alta pública en CEAN; altas Google restringidas por hook a la lista privada. No aceptar claves locales.
 - Guardado automático, reanudación e historial; conservar registros antiguos sin vincularlos automáticamente.
 - Sin registro público. Mis estadísticas usa únicamente el historial del perfil.

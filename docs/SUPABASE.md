@@ -6,9 +6,10 @@ anterior de la conversación compartida. Mantener GitHub Pages; no añadir OTP/S
 
 ## Estado y configuración
 
-Implementación local lista para revisión; el docente hace commit y push. La
-configuración remota de Google, el SQL y el hook todavía deben aplicarse. No se
-modificó el proyecto remoto ni se crearon usuarios reales.
+El docente confirmó Google funcionando después de configurar proveedor, hook y
+URLs y hacer su commit/push. El respaldo de resultados ahora está preparado
+localmente: ejecutar el SQL nuevo indicado en [CLOUD_HISTORY.md](CLOUD_HISTORY.md).
+El asistente no administra el proyecto remoto ni publica.
 
 Seguir **[GOOGLE_SETUP.md](GOOGLE_SETUP.md)**, con los valores exactos del proyecto,
 Google Cloud, proveedor, URL Configuration, autorización e importación en bloque.
@@ -44,8 +45,10 @@ Client Secret de Google se guarda únicamente en Supabase, nunca en la página.
 
 ## Datos y límites
 
-IndexedDB sigue guardando exámenes/estadísticas por `supabase:<UUID>`; no hay
-sincronización ni panel docente. Se preservan todos los perfiles/históricos
+IndexedDB guarda la copia local por `supabase:<UUID>`; Supabase respalda resultados
+terminados y permite recuperarlos en otro dispositivo. El examen en curso sigue
+local. El docente consulta `cean_exam_attempts` en el dashboard; no hay panel docente
+propio. Leer CLOUD_HISTORY.md. Se preservan todos los perfiles/históricos
 anteriores, sin vinculación automática. Si Google enlaza una cuenta Auth existente
 con el mismo email verificado, conservará su UUID; verificar ese caso en el proyecto.
 
@@ -55,9 +58,9 @@ estáticos en privados ni impiden prestar cuentas/sesiones. No afirmar lo contra
 
 ## Validación
 
-21 pruebas Node del motor, tiempos, estadísticas, servicio de acceso, PKCE y CSV.
+29 pruebas Node del motor, tiempos, estadísticas, servicio de acceso, PKCE y CSV.
 PostgreSQL temporal: SQL idempotente, RLS/privilegios, OAuth autorizado, rechazo
 de contraseña/baja/identidad distinta, anon y hook. Edge aislado con SDK real y
 respuestas OAuth/Auth/RPC simuladas prueba el viaje PKCE, rechazos y el simulador.
-Los detalles están en TESTING.md. El acceso real Google queda pendiente de completar
-la configuración remota; no se usaron cuentas/contraseñas reales.
+Los detalles están en TESTING.md. El docente confirmó el acceso Google real; el nuevo SQL de resultados está pendiente
+de aplicar. En las pruebas automatizadas no se usaron cuentas/contraseñas reales.

@@ -4,6 +4,7 @@ import * as store from './storage.js';
 import * as auth from './auth.js';
 import { initializeTiming, remainingTime, visitQuestion, accrueVisibleTime, recordResponse, completeAttempt } from './timing.js';
 import { statisticsHtml } from './statistics-view.js';
+import { performancePackage, downloadPerformanceExcel } from './performance-export.js';
 
 const main = document.querySelector('#main'), nav = document.querySelector('#header-nav'), dialog = document.querySelector('#modal');
 let user = null, profile = null, manifest = null;
@@ -14,6 +15,28 @@ let clockWasVisible = false, lastSaveTick = 0, expirySaveFailed = false;
 const e = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const button = (text, action, cls = '', extra = '') => `<button type="button" class="btn ${cls}" data-action="${action}" ${extra}>${text}</button>`;
 const date = value => new Intl.DateTimeFormat('es-BO', { dateStyle: 'medium', timeStyle: 'short' }).format(value);
+const cloudPanel = document.createElement('div');
+cloudPanel.className = 'cloud-panel'; cloudPanel.hidden = true;
+cloudPanel.innerHTML = '<span role="status"></span><button type="button" class="btn btn-small">Sincronizar historial</button>';
+main.before(cloudPanel);
+function updateCloudStatus() {
+  cloudPanel.hidden = !user;
+  if (!user) return;
+  const status = store.getCloudStatus(user.id);
+  cloudPanel.querySelector('span').textContent = status.message;
+  cloudPanel.dataset.state = status.state;
+  cloudPanel.querySelector('button').disabled = status.state === 'syncing';
+}
+addEventListener('cean-cloud-status', updateCloudStatus);
+cloudPanel.querySelector('button').addEventListener('click', async () => {
+  if (!user) return;
+  await store.syncHistory(user.id, true);
+  if (view === 'history') await renderHistory();
+  if (view === 'statistics') await renderStatistics();
+  if (view === 'landing') await renderLanding();
+});
+addEventListener('online', () => { if (user) void store.syncHistory(user.id, true); });
+setInterval(() => { if (user && store.getCloudStatus(user.id).state === 'pending') void store.syncHistory(user.id); }, 60000);
 
 function toast(message, error = false) {
   const element = document.querySelector('#toast');
@@ -22,6 +45,7 @@ function toast(message, error = false) {
 }
 function setView(next) { view = next; document.body.dataset.view = next; renderNav(); }
 function renderNav() {
+  updateCloudStatus();
   nav.innerHTML = user ? `<button type="button" class="nav-link ${view === 'landing' ? 'active' : ''}" data-action="home">Inicio</button><button type="button" class="nav-link ${view === 'history' ? 'active' : ''}" data-action="history">Mi historial</button><button type="button" class="nav-link ${view === 'statistics' ? 'active' : ''}" data-action="statistics">Mis estadísticas</button><div class="user-pill"><span class="avatar">${e(user.name[0].toUpperCase())}</span><span>${e(user.name)}</span></div><button type="button" class="nav-link" data-action="logout">Salir</button>` : '<span class="auth-nav"><span class="mini-dot"></span>TU PRÓXIMO PASO</span>';
 }
 function hero() {
@@ -29,7 +53,7 @@ function hero() {
 }
 function renderAuth() {
   setView('auth');
-  main.innerHTML = `<div class="hero-layout">${hero()}<section class="pixel-panel"><div class="panel-topline"><span>ESPACIO DEL POSTULANTE</span><span class="pixel-cross" aria-hidden="true"></span></div><div class="auth-card"><h2>Tu preparación empieza aquí.</h2><p class="subtext auth-intro">Usa tu cuenta de Google. Solo pueden entrar los correos autorizados por CEAN.</p><div id="auth-form"><button class="btn btn-full google-signin" type="button" data-action="google-login"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.8 12.2c0-.7-.1-1.5-.2-2.2H12v4.2h5.5a4.7 4.7 0 0 1-2 3v2.5h3.3c1.9-1.8 3-4.3 3-7.5Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.8-2.5l-3.3-2.6c-.9.6-2.1 1-3.5 1a6 6 0 0 1-5.6-4.1H3v2.7A10.3 10.3 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 13.8a6.1 6.1 0 0 1 0-3.6V7.5H3a10 10 0 0 0 0 9l3.4-2.7Z"/><path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5L18.7 5A9.7 9.7 0 0 0 12 2a10.3 10.3 0 0 0-9 5.5l3.4 2.7A6 6 0 0 1 12 6.1Z"/></svg>Entrar con Google</button><p id="auth-status" class="subtext" role="status" hidden></p><p id="auth-error" class="form-message" role="alert" hidden></p></div><p class="subtext">Elige el correo que entregaste al docente. La contraseña de Google se introduce únicamente en Google.</p><p class="privacy-note"><strong>Tu historial vive en este navegador.</strong> Tus resultados se guardan en este dispositivo. Puedes exportar una copia desde tu historial o tus estadísticas.</p></div></section></div>`;
+  main.innerHTML = `<div class="hero-layout">${hero()}<section class="pixel-panel"><div class="panel-topline"><span>ESPACIO DEL POSTULANTE</span><span class="pixel-cross" aria-hidden="true"></span></div><div class="auth-card"><h2>Tu preparación empieza aquí.</h2><p class="subtext auth-intro">Usa tu cuenta de Google. Solo pueden entrar los correos autorizados por CEAN.</p><div id="auth-form"><button class="btn btn-full google-signin" type="button" data-action="google-login"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.8 12.2c0-.7-.1-1.5-.2-2.2H12v4.2h5.5a4.7 4.7 0 0 1-2 3v2.5h3.3c1.9-1.8 3-4.3 3-7.5Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.8-2.5l-3.3-2.6c-.9.6-2.1 1-3.5 1a6 6 0 0 1-5.6-4.1H3v2.7A10.3 10.3 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 13.8a6.1 6.1 0 0 1 0-3.6V7.5H3a10 10 0 0 0 0 9l3.4-2.7Z"/><path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5L18.7 5A9.7 9.7 0 0 0 12 2a10.3 10.3 0 0 0-9 5.5l3.4 2.7A6 6 0 0 1 12 6.1Z"/></svg>Entrar con Google</button><p id="auth-status" class="subtext" role="status" hidden></p><p id="auth-error" class="form-message" role="alert" hidden></p></div><p class="subtext">Elige el correo que entregaste al docente. La contraseña de Google se introduce únicamente en Google.</p><p class="privacy-note"><strong>Tu historial, conectado a tu cuenta.</strong> Al finalizar, los resultados se respaldan en Supabase para recuperarlos en otro dispositivo. El examen en curso se guarda en este navegador.</p></div></section></div>`;
 }
 function showAuthError(error) {
   const element = document.querySelector('#auth-error');
@@ -147,7 +171,7 @@ function renderResults(focus = false) {
 }
 async function renderHistory() {
   await refreshProfile(); setView('history');
-  main.innerHTML = `<div class="page-title-row"><div><div class="eyebrow">TU PREPARACIÓN</div><h1>Mi historial</h1><p class="subtext" style="margin-top:10px">Cada simulacro, guardado en este dispositivo.</p></div>${button('Guardar historial', 'export-history', 'btn-small', profile.history.length ? '' : 'disabled')}</div>${profile.history.length ? `<div class="history-list">${[...profile.history].reverse().map(exam => {
+  main.innerHTML = `<div class="page-title-row"><div><div class="eyebrow">TU PREPARACIÓN</div><h1>Mi historial</h1><p class="subtext" style="margin-top:10px">Resultados con respaldo en Supabase y copia en este dispositivo.</p></div><div class="export-actions">${button('Descargar JSON', 'export-history', 'btn-small', profile.history.length ? '' : 'disabled')}${button('Descargar Excel', 'export-excel', 'btn-small', profile.history.length ? '' : 'disabled')}</div></div>${profile.history.length ? `<div class="history-list">${[...profile.history].reverse().map(exam => {
     const g = gradeExam(exam);
     return `<article class="history-row"><span class="history-score">${g.percent}%</span><div><h2>Simulacro de Derecho</h2><p>${date(exam.completedAt)} · ${formatTime(exam.elapsedMs)}<br>${g.correct} correctas · ${g.incorrect} incorrectas · ${g.unanswered} sin responder</p></div>${button('Ver respuestas', 'history-review', 'btn-small', `data-id="${e(exam.id)}"`)}</article>`;
   }).join('')}</div>` : `<div class="empty-state"><h2>Tu primera ronda está por venir.</h2><p>Al finalizar un simulacro, aquí aparecerán tu resultado y tus respuestas.</p>${button('Ir al inicio', 'home', 'btn-primary')}</div>`}`;
@@ -216,7 +240,21 @@ async function handleAction(action, element) {
     case 'filter': filter = element.dataset.filter; reviewIndex = selectedReviewIndices()[0] ?? 0; renderResults(); document.querySelector(`[data-filter="${filter}"]`).focus(); break;
     case 'export-active': accountTime(); exportData({ version:1, user: { name:user.name, username:user.username }, exam:active }, `CEAN-en-curso-${active.id}.json`); break;
     case 'export-review': exportData({ version:1, user: { name:user.name, username:user.username }, exam:review, grade:gradeExam(review) }, `CEAN-resultado-${review.id}.json`); break;
-    case 'export-history': exportData({ version:1, user: { name:user.name, username:user.username }, profile }, `CEAN-historial-${user.username}.json`); break;
+    case 'export-history': {
+      profile = await store.getProfile(user.id);
+      const data = performancePackage(user, profile, Date.now(), store.getCloudStatus(user.id).state);
+      exportData(data, `CEAN-rendimiento-${user.username.replace(/[^a-zA-Z0-9@._-]/g, '_')}.json`); break;
+    }
+    case 'export-excel': {
+      element.disabled = true; const label = element.textContent; element.textContent = 'Preparando Excel…';
+      try {
+        profile = await store.getProfile(user.id);
+        const data = performancePackage(user, profile, Date.now(), store.getCloudStatus(user.id).state);
+        await downloadPerformanceExcel(data, `CEAN-rendimiento-${user.username.replace(/[^a-zA-Z0-9@._-]/g, '_')}.xlsx`);
+        toast('Excel preparado con tu historial y estadísticas.');
+      } finally { element.disabled = false; element.textContent = label; }
+      break;
+    }
     case 'retry': location.reload(); break;
   }
 }

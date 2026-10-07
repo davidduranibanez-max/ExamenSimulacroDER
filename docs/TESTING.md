@@ -1,3 +1,17 @@
+# Actualización vigente: respaldo en Supabase (7/10/2026)
+
+29 pruebas Node pasan. tests/cloud-history.test.mjs cubre idempotencia, descarga
+exacta en otro dispositivo, paginación (>50), consultas por UUID, fallo/reintento,
+rechazo de datos corruptos y preferencia del respaldo confirmado.
+PostgreSQL temporal (PGlite fuera del repo): google-access.sql + exam-history.sql
+repetidos; RLS entre dos alumnos, bajas/anon, sin escritura directa, correo Auth,
+resumen e inmutabilidad. Edge aislado/API simulada: copia local con subida fallida,
+reintento sin duplicar, recuperación en contexto nuevo, estadísticas, 320 px,
+PKCE, revocación y prefijo Pages. Captura cloud-restored-mobile.png ignorada.
+No se escribió en Supabase remoto; validar con una cuenta real después de ejecutar
+el SQL nuevo y publicar. Google ya funciona según confirmación del docente.
+CLOUD_HISTORY.md reemplaza los apartados históricos de persistencia solo local.
+
 # Verificación
 
 ## Vigente: Google + lista privada (7 de octubre de 2026)
@@ -173,3 +187,13 @@ Estas comprobaciones no usaron credenciales reales ni cambiaron usuarios remotos
 La conversación compartida completa confirmó que no se debe añadir OTP ni cambiar
 hosting. Los detalles anteriores de sesiones restauradas describen la versión
 publicada antes de este cambio local, no el comportamiento nuevo.
+
+## JSON y Excel (7/10/2026)
+
+29 pruebas Node pasan. La prueba cloud-history reconstruye las estadísticas exactas
+tras serializar tres intentos completos y sus eventos. performance-export verifica
+paquete sin credenciales, XLSX real tipado, textos sin ejecución de fórmulas y
+registros antiguos sin tiempos inventados. Descargas Edge de JSON/Excel funcionan
+en estadísticas, móvil y prefijo Pages. openpyxl abrió las seis hojas y el paquete
+pasó integridad ZIP de lectura; Excel nativo abrió y guardó una copia VALIDADO.
+Muestras ficticias ignoradas en test-results. Procedimiento y biblioteca: EXPORTS.md.

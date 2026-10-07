@@ -26,7 +26,7 @@ No abras `index.html` directamente: el navegador necesita HTTP para leer los JSO
 Todo es HTML, CSS, JavaScript y JSON estático. Las rutas son relativas y funcionan
 bajo `https://usuario.github.io/CEAN/` y bajo un dominio propio. No hay rutas de
 servidor ni secretos. Se inicializa un cliente externo de Supabase con configuración
-pública; el acceso se valida con Supabase Auth y el historial sigue siendo local. `.nojekyll` permite servir los archivos
+pública; el acceso se valida con Supabase Auth y los resultados terminados se respaldan en Supabase. `.nojekyll` permite servir los archivos
 directamente.
 
 Cuando quieras publicar, sube los cambios y selecciona **Settings → Pages →
@@ -90,7 +90,7 @@ Supabase. El alumno elige su cuenta Google; no se le pide ni entrega una contras
 del simulador. El servidor valida la sesión y comprueba su autorización antes de
 mostrar Comenzar. Los correos se pueden importar todos juntos desde CSV.
 
-**Configuración remota pendiente:** seguir [docs/GOOGLE_SETUP.md](docs/GOOGLE_SETUP.md)
+**Configuración de Google:** seguir [docs/GOOGLE_SETUP.md](docs/GOOGLE_SETUP.md)
 para ejecutar el SQL, activar el hook, conectar Google y registrar las URLs exactas.
 La clave pública sola no habilita Google. Authentication → Users muestra cuentas;
 la lista de acceso es `cean_authorized_emails`, privada para los alumnos.
@@ -101,9 +101,11 @@ comprueba `getUser` + permiso remoto. Si falla cualquiera, el acceso queda bloqu
 Salir cierra esa sesión. El historial local se identifica por `supabase:<UUID>`.
 Los accesos y perfiles locales antiguos no autorizan y sus datos se conservan.
 
-Los exámenes y las estadísticas siguen guardándose **solo en este dispositivo**;
-no hay sincronización entre equipos ni panel docente remoto. Se pueden exportar
-copias JSON. Borrar los datos del sitio elimina el historial local. El banco y
+Los **resultados terminados** se respaldan en Supabase y se recuperan al entrar
+con la misma cuenta en otro dispositivo; se conserva una copia local. El examen
+en curso sigue en este navegador. Activación y acceso docente a los resultados:
+[docs/CLOUD_HISTORY.md](docs/CLOUD_HISTORY.md). Si un resultado está pendiente de
+subir, borrar datos del sitio todavía puede perderlo. Se pueden exportar copias JSON. El banco y
 las respuestas continúan siendo archivos públicos en GitHub Pages: Supabase Auth
 verifica la cuenta, pero no vuelve privados los archivos estáticos.
 
@@ -166,3 +168,12 @@ antiguos y cálculos estadísticos. La validez pedagógica requiere revisión hu
 Requiere Python y `pypdf` **solo si deseas regenerar el banco**, nunca para ejecutar
 el sitio. El PDF original se conserva intacto y no se incorpora al repositorio.
 La regeneración escribe en `tmp/importado`, para revisar antes de reemplazar `data`.
+
+## Descargar rendimiento
+
+En **Mi historial** o **Mis estadísticas**, elegir **Descargar JSON** para el
+paquete completo con historial, tiempos y métricas, o **Descargar Excel** para
+convertirlo directamente en un XLSX con Resumen, Intentos, Preguntas, Eventos,
+Distribución y Correlaciones. El alumno descarga su propio perfil. Cada archivo
+refleja el momento de la descarga; puede generar uno nuevo al acumular exámenes.
+No instala programas ni usa servicios de conversión. Detalles: [EXPORTS.md](docs/EXPORTS.md).

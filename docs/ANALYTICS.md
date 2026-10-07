@@ -10,8 +10,9 @@
   Cuando el sitio estaba cerrado se realiza al volver al perfil, usando la hora
   original de vencimiento. No hay servicio que siga ejecutándose en el servidor.
 - Finalizar y confirmar la finalización se muestran en rojo.
-- Datos locales por usuario, en la misma IndexedDB y sin borrar ni recalificar
-  históricos. No hay backend, API externa, CDN, dependencia npm o proceso de build.
+- Copia local en IndexedDB y respaldo Supabase de resultados terminados por UUID,
+  sin borrar ni recalificar históricos. Google autentica; el banco sigue estático.
+  No hay npm install ni proceso de build. Ver CLOUD_HISTORY.md.
 
 ## Dos tiempos diferentes
 
@@ -109,3 +110,12 @@ número de observaciones y las métricas se calculan sobre los datos originales.
 No hace falta cambiar versión de IndexedDB: son campos opcionales del valor ya
 almacenado. El banco JSON y los sorteos se conservan. `npm test` verifica los nuevos
 contratos. Leer este archivo al modificar tiempos, migraciones o métricas.
+
+## Persistencia y descarga actual
+
+El JSON completo conserva la materia prima de todas las métricas. Media, varianza,
+distribución, progreso y correlaciones se recalculan con getStatistics(history)
+al recuperar el historial. Se comprobó igualdad exacta antes y después de la
+sincronización/serialización, incluyendo tiempos, calendarios y revisiones.
+EXPORTS.md describe el paquete descargable y sus seis hojas Excel. No duplicar
+las métricas en una segunda tabla remota que pueda quedar desactualizada.

@@ -7,9 +7,10 @@
 CEAN es un simulador de examen de ingreso a Derecho. La primera versión funcional
 está desarrollada y el usuario la publicó en GitHub Pages el 6 de octubre de 2026.
 Se restauró el destino original del clon tras un fork a otra cuenta. El último commit
-local observado antes de esta actualización es `2531f44` (`Act 4 supabase mejora 2`).
-Ahora hay cambios locales de acceso con Supabase por subir por el
-usuario. El asistente no hace push ni publica. La revisión docente sigue pendiente.
+local observado es `c48df60` (`Autorización de google`). El docente confirmó Google
+operativo en la publicación. Se preparó respaldo de resultados en Supabase para
+aproximadamente 100 alumnos: requiere ejecutar el SQL nuevo y publicar los cambios.
+El asistente no hace commit, push ni cambios remotos. Revisión docente del banco pendiente.
 
 ## GitHub y cuenta de trabajo
 
@@ -41,15 +42,15 @@ Los tokens permanecen en memoria; sessionStorage conserva solo PKCE temporalment
 No hay contraseñas CEAN ni registro público en la interfaz. Los perfiles locales
 anteriores se preservan y no se asignan automáticamente a Google.
 
-**Pendiente remoto:** SQL `supabase/google-access.sql`, hook, proveedor Google con
-Client ID/Secret, URLs OAuth y altas Google habilitadas después del hook. No se
-modificó Supabase remoto. El docente carga correos en bloque; el script incluye su
-correo proporcionado, no inventa los de Soledad/alumnos. Leer GOOGLE_SETUP.md.
+**Estado remoto Google:** el docente configuró SQL/hook/proveedor/URLs, publicó y
+confirmó que el acceso funciona. Último commit observado: `c48df60`. El nuevo
+respaldo de resultados está listo localmente; falta que ejecute
+`supabase/exam-history.sql` y publique los cambios. Instrucciones: CLOUD_HISTORY.md.
+Solo resultados terminados en la nube; el examen en curso sigue en su navegador.
 No usar Authentication Users como lista de autorización: usar cean_authorized_emails.
-El usuario hará commit/push. No afirmar que Google está operativo hasta configurarlo.
 
 Flujo: Google → autorización remota → landing → examen 100 preguntas / 60 minutos
-→ resultados / historial / estadísticas. Datos del examen siguen locales, banco
+→ resultados / historial / estadísticas. Resultados terminados con respaldo remoto y copia local; banco
 sigue público; no se autorizó migrarlo ni añadir panel docente en este cambio.
 
 ## Requisitos vigentes
@@ -64,7 +65,7 @@ sigue público; no se autorizó migrarlo ni añadir panel docente en este cambio
 - Cada pregunta dispone de **100 candidatos propios**; dificultad objetivo alta.
 - El usuario revisará después: los **201.800 incisos actuales son borradores de generación
   lingüística**, pendientes de pertinencia, gramática, dificultad y respuesta única.
-- Historial local por usuario; versión celular y PC.
+- Historial por UUID, respaldo Supabase de resultados terminados, versión celular y PC.
 
 ## Datos de referencia
 
@@ -118,7 +119,7 @@ Se usa IndexedDB para el historial para evitar el pequeño cupo de localStorage.
 `auth.js` usa Google/Supabase; verifica usuario y autorización remota. No lee
 claves locales. IndexedDB guarda intentos por `supabase:<UUID>`, sin migración
 automática de perfiles anteriores. La autenticación necesita Internet. El banco
-sigue en JSON públicos y la persistencia de exámenes sigue local.
+sigue en JSON públicos y los resultados terminados tienen respaldo en Supabase (CLOUD_HISTORY.md).
 
 Los intentos almacenan copias de sus preguntas y cinco opciones, por lo que una
 edición del banco no altera un resultado previo. Web Locks impide que dos pestañas
@@ -131,16 +132,45 @@ respuestas y se identifican como parciales. Detalle en `docs/ANALYTICS.md`.
 
 ## Verificación y pendientes
 
-**Supabase / SimulacroExamenDER**: Google preparado localmente, ajustes remotos
-pendientes en GOOGLE_SETUP.md. SDK real probado en Edge con OAuth/Auth/RPC
-simulados, sin usar cuentas reales. SQL comprobado en PostgreSQL temporal con
-roles y restricciones. 21 pruebas Node del motor/estadísticas/acceso/CSV pasan.
-Detalles en TESTING.md. No se hizo commit/push ni cambios remotos.
+**Supabase / SimulacroExamenDER**: Google remoto funciona según el docente. Respaldo
+local+nube implementado, SQL nuevo pendiente de aplicar (CLOUD_HISTORY.md).
+29 pruebas Node, PostgreSQL temporal y Edge/API simulada pasan. No se modificó
+el proyecto remoto ni se hizo commit/push. Banco público, sin panel docente propio.
 
-Pendiente del docente: validación y ajuste de los 201.800 candidatos, especialmente
-los generados por familia de conceptos y las mutaciones gramaticales.
-Pendiente del usuario: configurar Google/Supabase y subir esta actualización.
-No se acordaron cuotas por materia, recuperación de contraseñas ni sincronización.
-La migración de historiales antiguos a UUID remotos también requiere definir sus propietarios.
+Pendiente del docente: revisar candidatos, ejecutar exam-history.sql, publicar y
+comprobar un resultado real. Migración de históricos de username requiere definir
+sus propietarios; no se realiza automáticamente.
 
 Leer ARCHITECTURE.md, QUESTION_BANK.md o TESTING.md únicamente según la tarea.
+
+## Actualización vigente: historial Supabase (7/10/2026)
+
+Esta sección reemplaza los pendientes antiguos de Google/no sincronización citados
+más arriba. Autenticación Google confirmada por el usuario. Se autoriza respaldo
+para unos 100 alumnos en el plan gratuito. storage.js + cloud-history.js sincronizan
+resultados terminados (respuestas/timing/snapshot) sin perder caché local; examen en
+curso no migra entre dispositivos. SQL exam-history.sql/RLS/RPC a ejecutar por el
+usuario, no aplicado remotamente por el asistente. Dashboard docente Table Editor:
+cean_exam_attempts. Sin cambio de alojamiento, sin costos contratados, sin push.
+29 pruebas Node y pruebas PostgreSQL/Edge aisladas pasan; detalles y límites en
+CLOUD_HISTORY.md. Importación de perfiles antiguos de username sigue pendiente.
+
+## Descargas y estadísticas vigentes (7/10/2026)
+
+Mis estadísticas y Mi historial ofrecen Descargar JSON / Descargar Excel.
+performance-export.js genera paquete cean-performance versión 2: copia íntegra
+con eventos y estadísticas derivadas. XLSX real de seis hojas mediante copia local
+SheetJS CE 0.20.3 (licencia incluida); import dinámico, rutas relativas, sin npm
+install ni servicio externo. EXPORTS.md documenta esquema, hojas y límites.
+29 pruebas pasan, incluidas igualdad estadística después de recuperar datos y
+roundtrip XLSX; descarga Edge, openpyxl independiente y apertura/guardado Excel
+nativo verificados con datos ficticios. Archivos descargados son fotografías del
+momento, no conexiones en vivo. SQL nuevo y publicación siguen a cargo del docente.
+
+## Confirmación del SQL remoto (7/10/2026, 02:41 Bolivia)
+
+El docente ejecutó exam-history.sql en Supabase y compartió la captura del SQL
+Editor con `commit;` y `Success. No rows returned`. Se inspeccionó la captura local
+más reciente. Reemplaza el pendiente de ejecutar ese SQL indicado antes. Falta
+confirmar publicación de estos cambios y un resultado real respaldado/recuperado;
+no se ejecutaron llamadas de escritura remotas desde el asistente.

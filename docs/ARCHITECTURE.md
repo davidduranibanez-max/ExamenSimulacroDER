@@ -32,7 +32,9 @@ PKCE durante la redirección. Los tokens permanecen en memoria. Recargar pide
 Google; no hay acceso alternativo con cuentas/contraseñas locales. **storage.js**
 administra IndexedDB/Web Locks por UUID. Los históricos antiguos se preservan.
 La tabla de correos, la RPC y el hook están en `supabase/google-access.sql`.
-Configuración remota pendiente y arquitectura específica en SUPABASE.md.
+Google remoto funcionando según el docente. Contrato en SUPABASE.md; respaldo de
+resultados en CLOUD_HISTORY.md. storage.js coordina copia local y cloud-history.js
+mediante el mismo cliente Supabase.
 
 **timing.js** administra el plazo persistente de una hora, las visitas, el tiempo
 visible acumulado y los eventos de respuesta. La finalización toma una copia
@@ -121,6 +123,22 @@ La importación de copias todavía no está implementada.
 Desde el 7 de octubre de 2026, el acceso vigente usa Google con el SDK 2.117.2
 por CDN y configuración pública. Callback en la raíz actual del sitio, respetando
 el prefijo Pages. La lista se administra en Supabase, no se entrega al navegador.
-Se necesita configurar Google, ejecutar el SQL y activar el hook manualmente.
-El banco sigue público y los exámenes siguen siendo locales. SUPABASE.md describe
+Google ya fue configurado por el docente. El SQL nuevo exam-history.sql requiere
+activación manual. El banco sigue público; los intentos en curso permanecen locales
+y los terminados se respaldan en Supabase. SUPABASE.md describe
 el contrato y GOOGLE_SETUP.md el procedimiento de instalación.
+
+## Respaldo de resultados (7/10/2026)
+
+Ver CLOUD_HISTORY.md: una fila inmutable por (UUID, intento), RPC con permiso remoto,
+RLS por alumno, copia local primero, unión transaccional e interfaz con estado
+confirmado/pendiente. Se sincronizan resultados y eventos completos al finalizar;
+no se suben respuestas individuales ni se recalifica con un banco actualizado.
+
+## Exportación de rendimiento
+
+performance-export.js construye el paquete JSON versionado y matrices de seis hojas
+para SheetJS CE 0.20.3. El proveedor local assets/vendor/xlsx-0.20.3.js se importa
+solo al descargar; no hay llamadas a conversores externos. El paquete incluye
+historial/eventos completos y estadísticas derivadas del mismo snapshot. XLSX es
+un informe estático tipado, no una conexión en vivo. Ver EXPORTS.md y licencia.
