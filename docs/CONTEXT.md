@@ -5,8 +5,23 @@
 ## Producto y estado
 
 CEAN es un simulador de examen de ingreso a Derecho. La primera versión funcional
-está desarrollada localmente en este repositorio. No se publicó ni se hizo push.
+está desarrollada en este repositorio. El usuario creó el commit `bcd1215`
+(`Primera actualizacion`) y su clon quedó apuntando a un fork de otra cuenta.
+Se restauró el destino original el 6 de octubre de 2026 sin cambiar commits ni archivos.
 El usuario hará la publicación en GitHub Pages y revisará los incisos como docente.
+
+## GitHub y cuenta de trabajo
+
+- `origin`: `https://github.com/davidduranibanez-max/CEAN.git`.
+- `fork-exsecutor`: `https://github.com/exsecutor000-ship-it/CEAN.git`, referencia conservada.
+- `main` sigue `origin/main`. Tras consultar el original, hay **un commit local por subir**
+  y ningún commit remoto por integrar. Volver a consultar si pasa tiempo antes del push.
+- Autor de próximos commits, solo en este repo: David Durán Ibáñez,
+  `davidduranibanez@gmail.com`, correo proporcionado por el usuario.
+- Credenciales HTTPS, solo en este repo: username `davidduranibanez-max` y separación
+  por ruta (`useHttpPath=true`). El usuario aún debe autenticarse en su cuenta al subir.
+- No se hizo push, reescritura de historial ni eliminación del fork en esta reparación.
+- Procedimiento de cuentas y remotos: `docs/GITHUB.md`.
 
 El usuario solicitó dos accesos iniciales: **DavidDuranIbañez** y **SoledadMachaca**.
 Sus verificadores de contraseña y sales están en `assets/data/profiles.json`.
