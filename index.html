@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c100f">
+  <meta name="description" content="Practica tu examen de ingreso a Derecho con CEAN. 100 preguntas aleatorias, cinco opciones e historial personal en tu navegador.">
+  <title>CEAN — Simulacro Examen de Derecho</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
+  <link rel="stylesheet" href="./assets/css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <canvas id="life-canvas" aria-hidden="true"></canvas>
+  <div class="background-shade" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="#" data-action="home" aria-label="CEAN, inicio">
+      <svg class="brand-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2h4v4h6v3h-2v5h4v3h-8v4h5v2H5v-2h5v-4H2v-3h4V9H4V6h6zm-4 8v4h3v-4zm9 0v4h3v-4z"/></svg>
+      <span>CEAN<span class="brand-caption">PREUNIVERSITARIO · DERECHO</span></span>
+    </a>
+    <nav id="header-nav" aria-label="Navegación principal"></nav>
+  </header>
+  <main id="main" tabindex="-1"><div class="initial-loading"><span class="pixel-loader" aria-hidden="true"></span>Preparando tu espacio de práctica…</div></main>
+  <footer class="site-footer"><span>CEAN <span class="footer-divider">/</span> Con CEAN #lalogras</span><div class="life-tools"><span id="life-label">JUEGO DE LA VIDA</span><button id="life-toggle" type="button" aria-label="Pausar Juego de la Vida" aria-pressed="false">PAUSAR</button><button id="life-reset" type="button" aria-label="Reiniciar Juego de la Vida">REINICIAR</button></div><span>HECHO PARA PRACTICAR.</span></footer>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="modal"><div id="modal-body"></div></dialog>
+  <noscript><p class="noscript">Activa JavaScript para iniciar sesión y realizar el simulacro.</p></noscript>
+  <script type="module" src="./assets/js/app.js"></script>
+</body>
+</html>

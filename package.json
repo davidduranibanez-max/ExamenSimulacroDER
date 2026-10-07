@@ -1,0 +1,14 @@
+{
+  "name": "cean-simulacro-derecho",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Simulador estático de examen de Derecho para GitHub Pages",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "dev": "node scripts/serve.mjs",
+    "check": "node scripts/check-bank.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": { "node": ">=20" }
+}
