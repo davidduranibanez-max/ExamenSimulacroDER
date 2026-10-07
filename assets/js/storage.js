@@ -10,10 +10,6 @@ function read(key, fallback) {
   try { return JSON.parse(text); }
   catch { throw new StorageError('Los datos locales no se pueden leer. Conserva una copia antes de restablecer el almacenamiento.'); }
 }
-function write(key, value) {
-  try { localStorage.setItem(PREFIX + key, JSON.stringify(value)); }
-  catch { throw new StorageError('No se pudo guardar el progreso. El almacenamiento está lleno o bloqueado.'); }
-}
 
 export function checkStorage() {
   try { localStorage.setItem(PREFIX + 'check', '1'); localStorage.removeItem(PREFIX + 'check'); }
@@ -25,27 +21,6 @@ export function getUsers() {
   if (!Array.isArray(users)) throw new StorageError('El registro de perfiles locales no es válido.');
   return users;
 }
-const normalizeUsername = value => value.trim().normalize('NFC').toLocaleLowerCase('es');
-
-export async function initializeProfiles() {
-  const response = await fetch(new URL('../data/profiles.json', import.meta.url));
-  if (!response.ok) throw new Error('No se pudieron cargar los perfiles iniciales.');
-  const seeds = await response.json();
-  if (!Array.isArray(seeds) || seeds.some(seed => !seed.id || !seed.name || !seed.username || seed.salt?.length !== 16 || seed.hash?.length !== 32)) throw new Error('Los perfiles iniciales tienen un formato inválido.');
-  const merge = () => {
-    const users = getUsers();
-    const missing = seeds.filter(seed => !users.some(user => normalizeUsername(user.username) === normalizeUsername(seed.username)));
-    if (missing.length) write('users', [...users, ...missing.map(seed => ({ ...seed, username: normalizeUsername(seed.username), createdAt: Date.now() }))]);
-  };
-  if (navigator.locks) await navigator.locks.request(PREFIX + 'registry', merge);
-  else merge();
-}
-export function getSessionUser() {
-  const id = sessionStorage.getItem(PREFIX + 'session');
-  return getUsers().find(user => user.id === id) || null;
-}
-export function login(user) { sessionStorage.setItem(PREFIX + 'session', user.id); }
-export function logout() { sessionStorage.removeItem(PREFIX + 'session'); }
 
 let databasePromise;
 function database() {
@@ -79,20 +54,6 @@ export async function saveProfile(userId, profile) {
   });
 }
 
-async function derive(password, salt) {
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-  const bytes = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: Uint8Array.from(salt), iterations: 210000, hash: 'SHA-256' }, key, 256);
-  return Array.from(new Uint8Array(bytes));
-}
-// Public self-registration is intentionally unavailable. Existing profiles are preserved.
-export async function authenticate(username, password) {
-  const user = getUsers().find(u => u.username === normalizeUsername(username));
-  if (!user) throw new Error('Usuario o contraseña incorrectos.');
-  const hash = await derive(password, user.salt);
-  if (hash.some((v, i) => v !== user.hash[i])) throw new Error('Usuario o contraseña incorrectos.');
-  login(user);
-  return user;
-}
 
 // Prevent two tabs from modifying the same attempt concurrently.
 export async function withProfileLock(userId, action) {

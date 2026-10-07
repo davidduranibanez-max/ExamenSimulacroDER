@@ -1,5 +1,20 @@
 # Verificación
 
+## Acceso vigente: Supabase Auth (7 de octubre de 2026)
+
+La autenticación local descrita en las pruebas históricas de este documento fue
+sustituida por correo/contraseña en Supabase. Edge aislado cargó el SDK real, con
+respuestas Auth simuladas para: rechazo de contraseña, éxito seguido de getUser,
+recarga con nueva validación remota, sesión antigua ignorada, token rechazado,
+Salir, separación de dos UUID, examen/corrección/estadísticas y móvil 390/320 px.
+Se conservaron perfiles e IndexedDB antiguos y no hubo errores JS no capturados.
+También se comprobó el formulario móvil y los módulos bajo `/ExamenSimulacroDER/`.
+Con CDN bloqueado, el acceso permaneció cerrado y mostró el mensaje de conexión.
+Un intento con correo ficticio contra Supabase real fue rechazado como se esperaba.
+No se usaron cuentas/contraseñas reales, ni se crearon usuarios o tablas remotas.
+Pendiente: el docente debe probar su cuenta existente en localhost antes del push.
+Las 13 pruebas Node continúan verificando el motor y las estadísticas.
+
 ## Comandos portables del repositorio
 
 ```sh

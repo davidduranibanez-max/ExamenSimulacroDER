@@ -26,15 +26,11 @@ entero aleatorio mediante rechazo, selección de incisos, calificación, validac
 de bancos e intentos y formato de tiempo. Sirve tanto al sitio como al validador
 Node y las pruebas.
 
-**storage.js** administra perfiles, PBKDF2, sesiones, IndexedDB y exclusión entre
-pestañas. Traduce errores de lectura y escritura en mensajes visibles. No borrar
-datos corruptos o viejos automáticamente.
-
-`assets/data/profiles.json` contiene los dos perfiles iniciales pedidos por el usuario,
-con sales y verificadores PBKDF2, sin contraseña en texto claro. Al iniciar se agregan
-únicamente los usuarios faltantes bajo un bloqueo del registro. No reemplaza claves
-o perfiles ya existentes. Los usuarios se normalizan a NFC y minúsculas españolas;
-se admiten letras Unicode y números. Nombre de perfil y username son campos distintos.
+**auth.js** valida correo y contraseña en Supabase Auth y verifica sesiones con
+`getUser`. La sesión del SDK usa sessionStorage y renovación de tokens. Los errores
+de red no permiten acceso local alternativo; no hay alta pública. **storage.js**
+administra IndexedDB y Web Locks por UUID remoto; no contiene autenticación local.
+Los perfiles antiguos permanecen intactos y no se vinculan automáticamente a cuentas.
 
 **timing.js** administra el plazo persistente de una hora, las visitas, el tiempo
 visible acumulado y los eventos de respuesta. La finalización toma una copia
@@ -77,14 +73,14 @@ filtros de resultados afectan la revisión, no la calificación.
 
 | Medio | Clave/objeto | Contenido |
 |---|---|---|
-| localStorage | `cean.exam.v1.users` | IDs, nombre, usuario, sal y hash |
-| sessionStorage | `cean.exam.v1.session` | ID del usuario conectado en esa pestaña |
+| localStorage | `cean.exam.v1.users` | Registro antiguo conservado; no autoriza el acceso |
+| sessionStorage | `cean.supabase.auth.v1` | Sesión Auth del SDK por pestaña |
 | IndexedDB | `cean-exam-v1` / `profiles` / clave userId | `{ active, history }` |
 | Web Locks | `cean.exam.v1.<userId>` | Exclusión del examen mientras está abierto |
 
-Las contraseñas se derivan usando Web Crypto; no se almacena el texto original.
-El uso de localhost o HTTPS habilita las APIs necesarias. El acceso es local y
-no protege el banco frente a quien puede leer el JavaScript o modificar el navegador.
+Las contraseñas se comprueban en Supabase y no se guardan en la aplicación.
+El uso de localhost o HTTPS habilita las APIs necesarias. La autenticación remota
+no vuelve privado el banco estático ni protege resultados locales contra manipulación.
 
 La cola `saving` serializa snapshots para evitar que una escritura antigua venza
 a la nueva. Se guarda en cada selección/navegación/marcado y cada cinco segundos.
@@ -118,11 +114,11 @@ radios nativos, foco visible, `dialog` modal y estados anunciados con `aria-live
 No hay servicios externos, SDK, CDN, analítica o fuentes descargadas.
 Las exportaciones excluyen credenciales y contienen copias de los datos del examen.
 La importación de copias todavía no está implementada.
-# Integración inicial de Supabase
+## Integración de Supabase
 
-Desde el 7 de octubre de 2026, `index.html` carga también un módulo independiente
-`assets/js/supabase-client.js`. Exporta `supabaseReady`, una promesa singleton
-que devuelve el cliente del SDK 2.117.2 por CDN o `null` si no puede cargarlo.
-La configuración pública vive en `assets/js/supabase-config.js`; no requiere build.
-No participa todavía en el acceso ni en el guardado de intentos. El flujo local
-continúa independiente de la disponibilidad del servicio. Ver `SUPABASE.md`.
+Desde el 7 de octubre de 2026, `auth.js` usa `supabase-client.js`: promesa singleton
+`supabaseReady`, SDK 2.117.2 por CDN y configuración pública en `supabase-config.js`.
+No requiere build. La sesión se valida remotamente; si falla la carga o Auth,
+se muestra el formulario con error y no se permite acceso por la sesión antigua.
+Los exámenes siguen siendo locales por `supabase:<UUID>`; no se crearon tablas ni
+sincronización. El banco sigue público. Detalles en `SUPABASE.md`.

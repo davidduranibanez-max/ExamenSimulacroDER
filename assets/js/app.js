@@ -1,6 +1,7 @@
 import { createExam, gradeExam, flattenBanks, shuffle, formatTime, LETTERS } from './core.js';
 import { initLife } from './life.js';
 import * as store from './storage.js';
+import * as auth from './auth.js';
 import { initializeTiming, remainingTime, visitQuestion, accrueVisibleTime, recordResponse, completeAttempt } from './timing.js';
 import { statisticsHtml } from './statistics-view.js';
 
@@ -28,7 +29,7 @@ function hero() {
 }
 function renderAuth() {
   setView('auth');
-  main.innerHTML = `<div class="hero-layout">${hero()}<section class="pixel-panel"><div class="panel-topline"><span>ESPACIO DEL POSTULANTE</span><span class="pixel-cross" aria-hidden="true"></span></div><div class="auth-card"><h2>Retoma tu preparación.</h2><p class="subtext auth-intro">Inicia sesión con tu cuenta de CEAN.</p><form id="auth-form" aria-label="Iniciar sesión"><label class="form-field">Usuario<input name="username" autocomplete="username" placeholder="Tu nombre de usuario" required minlength="3" maxlength="40" autocapitalize="none" spellcheck="false"></label><label class="form-field">Contraseña<div class="password-wrap"><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required minlength="8" maxlength="200"><button type="button" class="show-password" data-action="password" aria-label="Mostrar contraseña">VER</button></div></label><p id="auth-error" class="form-message" role="alert" hidden></p><button class="btn btn-primary btn-full" type="submit">ENTRAR</button></form><p class="privacy-note"><strong>Tu historial vive en este navegador.</strong> Tus resultados se guardan en este dispositivo. Puedes exportar una copia desde tu historial o tus estadísticas.</p></div></section></div>`;
+  main.innerHTML = `<div class="hero-layout">${hero()}<section class="pixel-panel"><div class="panel-topline"><span>ESPACIO DEL POSTULANTE</span><span class="pixel-cross" aria-hidden="true"></span></div><div class="auth-card"><h2>Retoma tu preparación.</h2><p class="subtext auth-intro">Entra con el correo y la contraseña de tu cuenta habilitada en CEAN.</p><form id="auth-form" aria-label="Iniciar sesión"><label class="form-field">Correo electrónico<input name="email" type="email" autocomplete="username" placeholder="tu.correo@ejemplo.com" required maxlength="254" autocapitalize="none" spellcheck="false"></label><label class="form-field">Contraseña<div class="password-wrap"><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required maxlength="200"><button type="button" class="show-password" data-action="password" aria-label="Mostrar contraseña">VER</button></div></label><p id="auth-error" class="form-message" role="alert" hidden></p><button class="btn btn-primary btn-full" type="submit">ENTRAR</button></form><p class="privacy-note"><strong>Tu historial vive en este navegador.</strong> Tus resultados se guardan en este dispositivo. Puedes exportar una copia desde tu historial o tus estadísticas.</p></div></section></div>`;
 }
 async function renderLanding() {
   await refreshProfile(); setView('landing');
@@ -185,7 +186,7 @@ async function handleAction(action, element) {
     case 'home': if (!(await leaveExam())) break; if (user) await renderLanding(); else renderAuth(); main.focus(); break;
     case 'statistics': if (!(await leaveExam())) break; await renderStatistics(); main.focus(); break;
     case 'history': if (!(await leaveExam())) break; await renderHistory(); main.focus(); break;
-    case 'logout': if (!(await leaveExam())) break; store.logout(); user = null; profile = null; renderAuth(); main.focus(); break;
+    case 'logout': if (!(await leaveExam())) break; await auth.logout(); user = null; profile = null; renderAuth(); main.focus(); break;
     case 'next': case 'previous': if (active) { accountTime(); if (remainingTime(active) === 0) { await finishExam(true); break; } active.current = Math.max(0, Math.min(99, active.current + (action === 'next' ? 1 : -1))); visitQuestion(active); queueSave(); renderExam(true); } break;
     case 'question': if (active) { accountTime(); if (remainingTime(active) === 0) { await finishExam(true); break; } active.current = Number(element.dataset.index); visitQuestion(active); queueSave(); renderExam(true); } break;
     case 'mark': active.marked[active.current] = !active.marked[active.current]; queueSave(); renderExam(); document.querySelector('[data-action="mark"]').focus(); break;
@@ -217,7 +218,7 @@ main.addEventListener('submit', async event => {
   if (control.disabled) return; control.disabled = true; control.textContent = 'UN MOMENTO…';
   const errorElement = document.querySelector('#auth-error'); errorElement.hidden = true;
   try {
-    user = await store.authenticate(data.get('username'), data.get('password'));
+    user = await auth.authenticate(data.get('email'), data.get('password'));
     await renderLanding(); main.focus();
   } catch (error) { errorElement.textContent = error.message; errorElement.hidden = false; control.disabled = false; control.textContent = 'ENTRAR'; }
 });
@@ -230,11 +231,24 @@ async function boot() {
   try {
     if (!crypto.subtle || !crypto.randomUUID) throw new Error('Abre el simulador mediante localhost o HTTPS para habilitar el acceso y el sorteo.');
     store.checkStorage();
-    await store.initializeProfiles();
     const response = await fetch(new URL('../../data/manifest.json', import.meta.url));
     if (!response.ok) throw new Error('No se pudo cargar el catálogo de preguntas. Inicia un servidor local; no abras index.html directamente.');
-    manifest = await response.json(); user = store.getSessionUser();
+    manifest = await response.json();
+    let accessError;
+    try { user = await auth.restoreSession(); }
+    catch (error) { user = null; accessError = error.message; }
     if (user) await renderLanding(); else renderAuth();
+    if (accessError) { const element = document.querySelector('#auth-error'); element.textContent = accessError; element.hidden = false; }
+    void auth.onSessionEnded(async () => {
+      if (!user) return;
+      if (active) {
+        accountTime(); stopClock();
+        try { await queueSave(); } catch { toast('La sesión terminó y no se pudo guardar el último cambio.', true); }
+        releaseExam();
+      }
+      user = null; profile = null; renderAuth();
+      toast('Tu sesión terminó. Inicia sesión para continuar.');
+    }).catch(() => {});
   } catch (error) { main.innerHTML = `<section class="error-card"><h1>No pudimos iniciar el simulador.</h1><p>${e(error.message)}</p>${button('Reintentar', 'retry', 'btn-primary')}</section>`; }
 }
 void boot();

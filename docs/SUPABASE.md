@@ -1,53 +1,83 @@
-# Conexión inicial a Supabase
+# Acceso mediante Supabase Auth
 
 Actualizado: 7 de octubre de 2026, hora de Bolivia.
 
-## Alcance de este paso
+## Objetivo y alcance
 
-Se siguió la última instrucción de la conversación compartida por el usuario:
-inicializar el cliente JavaScript, sin crear todavía un formulario de acceso remoto.
-No se ejecutaron commits, push ni despliegues.
-
-`index.html` carga `assets/js/supabase-client.js` mediante una ruta relativa.
-Ese módulo importa la configuración pública de `assets/js/supabase-config.js`
-y carga Supabase JS **2.117.2** desde jsDelivr como módulo ES, sin npm install
-ni compilación. El usuario autorizó expresamente esta conexión externa.
-
-Los futuros módulos pueden usar el mismo cliente:
-
-```js
-import { supabaseReady } from './supabase-client.js';
-const client = await supabaseReady;
-if (!client) throw new Error('Supabase no está disponible');
-```
-
-La promesa devuelve el cliente o `null` si falla la carga. El fallo no impide
-acceder al simulacro local. El mensaje «Cliente de Supabase inicializado» confirma
-la creación del cliente; no prueba por sí solo una petición al servidor.
-
-## Configuración y estado
+El usuario aclaró que el objetivo de la conversación compartida es entrar con
+**correo + contraseña individual comprobados por Supabase**, no solo cargar el SDK.
+La implementación sustituye el acceso local. No crea cuentas ni envía correos.
+No se hicieron commits, push ni despliegues; el usuario publica desde VS Code.
 
 Proyecto: **SimulacroExamenDER**.
 URL pública: `https://mnbfmmowmimkadtotvkz.supabase.co`.
-La clave **publishable** proporcionada por el usuario está en el archivo de
-configuración y puede publicarse con el sitio. Nunca añadir una clave secret,
-service_role ni contraseñas de base de datos al repositorio.
+La clave publishable autorizada está en `assets/js/supabase-config.js` y puede
+publicarse. Nunca incluir secret, service_role o contraseñas de base de datos.
 
-Se verificó la URL y la clave mediante `GET /auth/v1/settings`: HTTP 200,
-acceso por correo habilitado y altas públicas desactivadas. Solo se leyó la
-configuración pública; no se modificó el proyecto de Supabase.
+## Arquitectura
 
-El acceso existente sigue usando perfiles locales. Los intentos, tiempos y
-estadísticas siguen en IndexedDB; **no se envían datos de estudiantes a Supabase**.
-Inicializar el SDK no migra cuentas ni historiales. Antes de implementar esa fase,
-definir cuentas remotas, tablas, políticas RLS y permisos de consulta del docente.
+- `index.html` y `app.js` cargan módulos con rutas relativas.
+- `supabase-client.js` exporta `supabaseReady`: SDK 2.117.2 por CDN jsDelivr,
+  sin build ni npm install. Su sesión usa sessionStorage, clave
+  `cean.supabase.auth.v1`, persistencia y renovación automática de tokens.
+- `auth.js` llama a `signInWithPassword({email, password})` y después a `getUser`.
+  Para restaurar una sesión primero consulta `getSession` y después verifica
+  `getUser` con Auth. Exige ID, correo y `email_confirmed_at`.
+- Los datos guardados en el navegador, incluyendo la sesión local antigua,
+  no son una autorización. No hay fallback al acceso local si falla la red/CDN.
+- `app.js` muestra errores genéricos de credenciales, correo no habilitado,
+  exceso de intentos y conexión. No registra contraseñas ni tokens en logs.
+  Se vuelve al formulario cuando el SDK notifica SIGNED_OUT.
+- **Salir** guarda el examen local y ejecuta `signOut({scope:'local'})` para
+  cerrar esa sesión, sin desconectar otros dispositivos.
+- El UUID remoto identifica el historial local mediante `supabase:<UUID>`.
+  No usar el email o el nombre editable como identificador ni como rol docente.
 
-## Verificación manual
+Los historiales y las estadísticas permanecen en IndexedDB. No se crearon
+tablas ni políticas RLS porque este paso no sincroniza datos de estudiantes.
+El banco y las respuestas siguen siendo archivos públicos de GitHub Pages.
+La autenticación no protege esos archivos ni garantiza calificaciones locales
+contra manipulación. Para protección de datos remotos, definir tablas y RLS.
+
+## Lo que debe hacer el docente en Supabase
+
+En **Authentication → Users**, comprobar que existe cada cuenta autorizada con
+su correo y contraseña. Para crearla manualmente, usar **Add user / Create new
+user**, asignar contraseña y marcar **Auto Confirm User**. Esa marca habilita el
+correo administrativamente; no demuestra que el usuario controle ese buzón.
+No hace falta SMTP, OTP ni configurar redirecciones para este acceso con contraseña.
+
+Mantener el proveedor Email habilitado y **Allow new users to sign up** desactivado.
+Se confirmó en la configuración pública que email está habilitado y el registro
+está desactivado. No habilitar registro público como solución a un error de acceso.
+La cuenta de David de la conversación anterior debería servir si cumple estas
+condiciones. Las cuentas locales de David y Soledad no crean usuarios en Supabase.
+
+No se solicitaron ni utilizaron contraseñas reales para probar. La prueba final
+del usuario es entrar en localhost con su cuenta de Supabase existente.
+
+## Compatibilidad de datos anteriores
+
+No se borró localStorage, IndexedDB ni el archivo antiguo de perfiles. El código
+ya no descarga ese archivo ni autentica con sus verificadores. Los históricos
+antiguos siguen bajo sus claves originales y no se asignan automáticamente a un
+UUID remoto. Una migración posterior debe definir y confirmar cada propietario,
+conservando copias completas. Las cuentas nuevas empiezan con un historial local
+propio. No afirmar que los datos se migraron o sincronizaron.
+
+## Verificación y publicación
 
 1. Ejecutar `npm start` y abrir http://localhost:4173.
-2. En la consola del navegador debe aparecer «Cliente de Supabase inicializado».
-3. Confirmar que el acceso local y Mis estadísticas siguen funcionando.
-4. Si falla la descarga del SDK, comprobar el aviso y que el simulacro sigue disponible.
+2. Comprobar que aparece **Correo electrónico**, sin alta pública.
+3. Entrar con la contraseña de la cuenta de Supabase, no con el username antiguo.
+4. Recargar: la sesión debe validarse contra Auth y conservar el historial de ese UUID.
+5. Pulsar Salir: vuelve al formulario. Probar contraseña incorrecta: debe bloquear.
+6. Hacer commit y push desde VS Code. El cambio no llega a Pages hasta publicarlo.
 
-El cliente requiere Internet para cargar el SDK y acceder a Supabase. GitHub Pages
-sigue sirviendo los archivos estáticos; no aloja el servicio de Supabase.
+Se verificaron el flujo y errores con el SDK real y respuestas Auth simuladas en
+Edge aislado; también un rechazo real de credenciales ficticias contra Supabase.
+Los detalles y límites están en `TESTING.md`.
+
+Referencias oficiales: [acceso por contraseña](https://supabase.com/docs/reference/javascript/auth-signinwithpassword),
+[verificación remota del usuario](https://supabase.com/docs/reference/javascript/auth-getuser),
+[claves públicas](https://supabase.com/docs/guides/getting-started/api-keys).

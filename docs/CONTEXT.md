@@ -7,8 +7,8 @@
 CEAN es un simulador de examen de ingreso a Derecho. La primera versión funcional
 está desarrollada y el usuario la publicó en GitHub Pages el 6 de octubre de 2026.
 Se restauró el destino original del clon tras un fork a otra cuenta. El último commit
-local observado antes de esta actualización es `5369883` (`Actualización`).
-Ahora hay cambios locales de acceso, temporizador y estadísticas por subir por el
+local observado antes de esta actualización es `a649022` (`Actualización supabase`).
+Ahora hay cambios locales de acceso con Supabase por subir por el
 usuario. El asistente no hace push ni publica. La revisión docente sigue pendiente.
 
 ## GitHub y cuenta de trabajo
@@ -16,8 +16,10 @@ usuario. El asistente no hace push ni publica. La revisión docente sigue pendie
 - `origin`: `https://github.com/davidduranibanez-max/CEAN.git`.
 - `fork-exsecutor`: `https://github.com/exsecutor000-ship-it/CEAN.git`, referencia conservada.
 - `main` sigue `origin/main`. Consultar su estado antes de subir; no asumir que el
-  seguimiento remoto está actualizado. El usuario consideró renombrar repositorio y
-  cuenta; no cambiar remotos sin comprobar el nombre definitivo.
+  seguimiento remoto está actualizado. La publicación actual es
+  `https://davidduranibanez-max.github.io/ExamenSimulacroDER/`; el repositorio remoto
+  fue renombrado a ExamenSimulacroDER y GitHub redirige la URL antigua. No cambiar
+  remotos automáticamente.
 - Autor de próximos commits, solo en este repo: David Durán Ibáñez,
   `davidduranibanez@gmail.com`, correo proporcionado por el usuario.
 - Credenciales HTTPS, solo en este repo: username `davidduranibanez-max` y separación
@@ -25,13 +27,15 @@ usuario. El asistente no hace push ni publica. La revisión docente sigue pendie
 - No se hizo push, reescritura de historial ni eliminación del fork en esta reparación.
 - Procedimiento de cuentas y remotos: `docs/GITHUB.md`.
 
-El usuario solicitó dos accesos iniciales: **DavidDuranIbañez** y **SoledadMachaca**.
-Sus verificadores de contraseña y sales están en `assets/data/profiles.json`.
-No documentar ni guardar la contraseña en texto claro. Se importan al abrir el sitio,
-sin reemplazar perfiles existentes y con historiales independientes. El acceso admite
-letras Unicode, incluida la ñ, y no distingue mayúsculas/minúsculas.
+Acceso vigente: **correo + contraseña mediante Supabase Auth**. Se sustituyó
+el formulario de username y la sesión local: solo cuentas existentes, correo
+confirmado, validación remota con `getUser`, sin alta pública, SMTP ni OTP.
+El SDK guarda su sesión en sessionStorage; una sesión local antigua no autoriza.
+Los nombres DavidDuranIbañez y SoledadMachaca ya no son accesos vigentes.
+No se crearon ni modificaron cuentas remotas durante esta implementación.
+Los datos de los perfiles antiguos se preservan, sin asociación automática a correos.
 
-Flujo: **acceso local sin registro → landing → examen de 100 preguntas / 60 minutos
+Flujo: **acceso Supabase sin registro → landing → examen de 100 preguntas / 60 minutos
 → resultados → historial y Mis estadísticas**.
 Hay guardado automático, reanudación, marcado para revisar, borrado de respuesta,
 corrección por pregunta, estadísticas por área y exportación JSON.
@@ -97,9 +101,11 @@ descarga todo el banco para comenzar.
 ## Decisiones relevantes
 
 Se usa IndexedDB para el historial para evitar el pequeño cupo de localStorage.
-localStorage contiene únicamente perfiles/credenciales derivadas; sessionStorage
-mantiene la sesión de cada pestaña. PBKDF2-SHA256 con sal y 210.000 iteraciones.
-Es acceso local, sin seguridad de servidor ni sincronización entre equipos.
+`auth.js` usa Supabase Auth y no lee las credenciales locales. La sesión nueva
+se verifica contra el servidor; los datos de usuario y la sesión antigua no autorizan.
+IndexedDB guarda intentos por `supabase:<UUID>`. Los perfiles locales anteriores
+siguen intactos bajo sus claves originales; no migrarlos por coincidencia de nombre.
+La autenticación necesita Internet. La persistencia de exámenes sigue siendo local.
 
 Los intentos almacenan copias de sus preguntas y cinco opciones, por lo que una
 edición del banco no altera un resultado previo. Web Locks impide que dos pestañas
@@ -112,14 +118,15 @@ respuestas y se identifican como parciales. Detalle en `docs/ANALYTICS.md`.
 
 ## Verificación y pendientes
 
-Conexión inicial a **Supabase / SimulacroExamenDER** autorizada por el usuario:
-`assets/js/supabase-config.js` contiene URL y clave publishable públicas;
-`assets/js/supabase-client.js` exporta la promesa singleton `supabaseReady` y carga
-el SDK 2.117.2 por CDN, sin build. URL/clave verificadas con HTTP 200 en la
-configuración pública de Auth. Este paso solo inicializa el cliente: acceso e
-historial siguen siendo locales y no se suben datos. No migrar autenticación ni
-crear tablas como consecuencia implícita. Leer `docs/SUPABASE.md` para continuar.
-La excepción expresa al requisito sin backend/CDN se limita a esta integración.
+**Supabase / SimulacroExamenDER**: configuración pública en `supabase-config.js`,
+SDK 2.117.2 por CDN en `supabase-client.js`, acceso en `auth.js`. Formulario de
+correo/contraseña, verificación remota al entrar/recargar, cierre de sesión y
+bloqueo si el SDK o Auth no están disponibles. URL/clave verificadas con HTTP 200.
+Prueba en Edge: SDK real con Auth simulado para éxito/recarga/rechazo de token,
+cuentas separadas, examen, estadísticas, móvil, preservación y fallo de CDN;
+además un intento inválido contra Supabase real. No se usaron credenciales reales.
+Pendiente del usuario: probar su cuenta existente en localhost y publicar el cambio.
+Leer `docs/SUPABASE.md`. No añadir sincronización/tablas/panel docente implícitamente.
 
 `npm run check`: banco completo, integridad/IDs/incisos/tamaños. `npm test`: trece
 pruebas de sorteos, corrección, plazos, eventos, estadísticas, compatibilidad y Conway. Prueba de navegador
@@ -128,7 +135,8 @@ pendientes, historial, nueva ronda y móvil. Capturas locales en `test-results/`
 
 Pendiente del docente: validación y ajuste de los 201.800 candidatos, especialmente
 los generados por familia de conceptos y las mutaciones gramaticales.
-Pendiente del usuario: subir esta actualización local de temporizador/estadísticas.
+Pendiente del usuario: subir esta actualización local del acceso por correo.
 No se acordaron cuotas por materia, recuperación de contraseñas ni sincronización.
+La migración de historiales antiguos a UUID remotos también requiere definir sus propietarios.
 
 Leer ARCHITECTURE.md, QUESTION_BANK.md o TESTING.md únicamente según la tarea.
