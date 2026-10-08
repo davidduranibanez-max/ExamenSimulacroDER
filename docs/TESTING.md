@@ -1,4 +1,60 @@
-# Actualización vigente: respaldo en Supabase (7/10/2026)
+# Revisión constitucional y controles compactos (7–8/10/2026)
+
+327 registros constitucionales, cada uno con 100 incisos distintos; 1691 preguntas
+de otras materias conservadas byte por byte. Las 32700 justificaciones se contrastan
+con los textos de sus incisos y referencias a artículos. La última revisión sustituye
+pistas ideológicas o respuestas ajenas al tema por diferencias de alcance, requisitos,
+competencias y enumeraciones constitucionales próximas. La dificultad es un objetivo
+editorial; ninguna prueba automática certifica la calidad pedagógica individual.
+
+PostgreSQL temporal/PGlite: actualización de los 327 payload, segunda ejecución
+idempotente, rechazo de conflicto o fila ausente y transacción revertida, conservación
+de bajas, otra materia y snapshots anteriores. Veinte sorteos constitucionales:
+100 preguntas distintas y cuatro distractores propios más una respuesta correcta.
+Herramienta privada: ../banco-privado/herramientas/verificar-revision.mjs.
+
+Navegador integrado con perfil y SDK/RPC ficticios: PC 1366×768 y móvil 320×740.
+Seleccionar un inciso extenso, borrar, avanzar y volver conserva el borrado; ninguna
+página se desborda horizontalmente. Se mantienen 100 círculos y temporizador activo.
+No aparece Marcar para revisar, su leyenda ni el aviso La hora sigue corriendo.
+Borrar respuesta comparte fila con Anterior/Siguiente. Capturas inspeccionadas:
+test-results/exam-without-review-desktop.png y exam-without-review-mobile.png.
+No se ejecutó SQL ni se escribieron intentos en Supabase remoto.
+
+Activación pendiente: seguir el LEEME privado, ejecutar los 17 bloques SQL y
+VERIFICAR.sql (327/327/327), y probar un examen nuevo. Commit/push publica sólo la
+interfaz y documentación; no activa los nuevos incisos privados.
+
+# Interfaz compacta y LOESS (7/10/2026)
+
+37 pruebas Node pasan y `npm run check` confirma integridad/publicación sin banco
+privado ni CSV. Las cuatro pruebas nuevas de `local-regression.test.mjs` cubren
+una recta con fechas irregulares y epoch real, no mutación, datos insuficientes,
+puntuación constante, fechas duplicadas/empates y una tendencia no lineal conocida.
+También verifican que el SVG distingue puntos observados de la curva y muestra ejes.
+
+Navegador integrado, SDK/RPC ficticios bajo `/ExamenSimulacroDER/` y perfil de prueba:
+acceso, landing, estadísticas, iniciar examen, selección, siguiente/anterior,
+guardado al salir y regreso a estadísticas. PC 1366×768 y teléfono 390/320 px:
+sin desbordamiento horizontal de página, ayudas dentro del ancho móvil,
+alternativas extensas completas y selección conservada. No errores/warnings JS.
+En PC las métricas miden aproximadamente 87 px de alto y ambos ejes de la serie
+temporal quedan visibles en la pantalla de 768 px. El mapa de 238 px contiene
+100 círculos en siete columnas y no necesita scroll interno a esa altura.
+
+La cabecera fija inicialmente tapaba títulos por el scroll provocado al enfocar
+main; se corrigió con preventScroll y se verificó el título por debajo de la cabecera.
+A 320 px se eliminó el desbordamiento causado por min-width y la barra de scroll.
+Los gráficos mantienen scroll propio en teléfonos, sin ensanchar la página.
+
+Capturas ignoradas en test-results: compact-landing-desktop.png,
+loess-statistics-desktop.png y compact-exam-mobile.png. El servidor desechable
+tmp/ui-check.mjs contiene solo preguntas/usuarios ficticios y no se publica.
+No se ejecutaron intentos en Supabase real ni se cambiaron permisos remotos.
+El docente dijo que aparentemente resolvió el nuevo correo; diagnóstico pendiente
+de su explicación. Las pruebas de interfaz no certifican el acceso de esa persona.
+
+# Actualización histórica: respaldo en Supabase (7/10/2026)
 
 29 pruebas Node pasan. tests/cloud-history.test.mjs cubre idempotencia, descarga
 exacta en otro dispositivo, paginación (>50), consultas por UUID, fallo/reintento,
@@ -116,7 +172,7 @@ o repetir el recorrido manual descrito debajo.
 
 1. Abrir localhost y entrar con una cuenta existente; no debe aparecer registro.
 2. Comenzar; comprobar 100 preguntas, cinco opciones y navegador de círculos.
-3. Responder, cambiar, borrar y marcar; navegar a preguntas lejanas.
+3. Responder, cambiar y borrar; navegar a preguntas lejanas. No debe aparecer marcar.
 4. Volver al inicio, recargar y continuar; comprobar que nada se remezcló.
 5. Abrir otra pestaña con ese perfil; verificar que bloquea la edición simultánea.
 6. Finalizar con pendientes; confirmar resultado y respuestas señaladas.

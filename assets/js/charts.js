@@ -1,23 +1,24 @@
 // Self-contained SVG charts: no build, CDN, tracking or downloaded chart library.
 export const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const round = n => Number(n.toFixed(2));
-const W = 640, H = 280, L = 52, R = 20, T = 20, B = 46;
-function frame(title, body, labels, maxY = 100) {
+const W = 640, H = 250, L = 58, R = 20, T = 20, B = 56;
+function frame(title, body, labels, maxY = 100, axes = {}) {
   const grid = Array.from({ length: 5 }, (_, i) => {
     const y = T + (H - T - B) * i / 4;
     return `<line class="chart-grid" x1="${L}" y1="${y}" x2="${W - R}" y2="${y}"/><text x="${L - 10}" y="${y + 4}" text-anchor="end">${round(maxY * (1 - i / 4))}</text>`;
   }).join('');
-  return `<div class="chart-scroll" tabindex="0" aria-label="${escapeHtml(title)}. Desplaza el gráfico si es necesario."><svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(title)}">${grid}${labels}${body}</svg></div><p class="chart-readout" aria-live="polite">Pasa por un punto o selecciónalo con el teclado para ver el detalle.</p>`;
+  const axisLabels = `${axes.xLabel ? `<text class="chart-axis-title" x="${(L + W - R) / 2}" y="${H - 3}" text-anchor="middle">${escapeHtml(axes.xLabel)}</text>` : ''}${axes.yLabel ? `<text class="chart-axis-title" transform="translate(13 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">${escapeHtml(axes.yLabel)}</text>` : ''}`;
+  return `<div class="chart-scroll" tabindex="0" aria-label="${escapeHtml(title)}. Desplaza el gráfico si es necesario."><svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(title)}">${grid}${labels}${axisLabels}${body}</svg></div><p class="chart-readout" aria-live="polite">Pasa por un punto o selecciónalo con el teclado para ver el detalle.</p>`;
 }
-export function lineChart(points, title, second = null) {
+export function lineChart(points, title, second = null, options = {}) {
   if (!points.length) return '<div class="chart-empty">Tu primer simulacro aparecerá aquí.</div>';
   const min = points.reduce((n, p) => Math.min(n, p.x), Infinity), max = points.reduce((n, p) => Math.max(n, p.x), -Infinity);
   const x = value => max === min ? (L + W - R) / 2 : L + (value - min) / (max - min) * (W - L - R);
   const y = value => T + (100 - value) / 100 * (H - T - B);
   const path = data => data.map((p, i) => `${i ? 'L' : 'M'}${round(x(p.x))},${round(y(p.y))}`).join(' ');
-  const labels = [...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])].map(i => `<text x="${x(points[i].x)}" y="${H - 16}" text-anchor="${i === 0 && points.length > 1 ? 'start' : i === points.length - 1 && points.length > 1 ? 'end' : 'middle'}">${escapeHtml(points[i].label)}</text>`).join('');
+  const labels = [...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])].map(i => `<text x="${x(points[i].x)}" y="${H - 30}" text-anchor="${i === 0 && points.length > 1 ? 'start' : i === points.length - 1 && points.length > 1 ? 'end' : 'middle'}">${escapeHtml(points[i].label)}</text>`).join('');
   const dots = points.map(p => `<g class="chart-point" tabindex="0" data-chart-point="${escapeHtml(p.detail)}" aria-label="${escapeHtml(p.detail)}"><circle class="chart-hit" cx="${x(p.x)}" cy="${y(p.y)}" r="10"/><circle cx="${x(p.x)}" cy="${y(p.y)}" r="4"/><title>${escapeHtml(p.detail)}</title></g>`).join('');
-  return frame(title, `${second ? `<path class="chart-line chart-secondary" d="${path(second)}"/>` : ''}<path class="chart-line" d="${path(points)}"/>${dots}`, labels);
+  return frame(title, `${second?.length ? `<path class="chart-line chart-secondary ${options.trend ? 'chart-trend' : ''}" d="${path(second)}"/>` : ''}${options.connectPoints === false ? '' : `<path class="chart-line" d="${path(points)}"/>`}${dots}`, labels, 100, options);
 }
 export function barChart(bins, title, value = b => b.count) {
   const max = Math.max(4, Math.ceil(Math.max(...bins.map(value)) / 4) * 4), step = (W - L - R) / bins.length;

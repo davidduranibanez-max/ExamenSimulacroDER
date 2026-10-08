@@ -4,9 +4,24 @@
 
 ## Estado vigente
 
+**Revisión constitucional (7/10/2026):** 327 preguntas locales con 100 incisos cada
+una, originales conservados, fuentes CPE 2009 y justificaciones privadas. Se amplían
+preguntas para evaluar condiciones normativas completas. Aprobación docente pendiente.
+**Supabase aún usa su banco anterior hasta que el docente ejecute los SQL privados.**
+Leer CONSTITUTION_REVIEW.md y el LEEME privado; no importar CSV ni publicar esos SQL.
+Examen sin Marcar para revisar ni aviso bajo el reloj; Borrar respuesta pasa a la
+fila de navegación. marked se conserva en datos antiguos por compatibilidad.
+
+**Interfaz actual (7/10/2026):** «Simulador de Examen», silueta del logo CEAN con
+verde del tema, cabecera fija de menor altura y tarjetas/examen compactos.
+Serie temporal con puntos por fecha y tendencia local LOESS, calculada desde el
+historial sin modificar notas ni almacenamiento. Leer INTERFACE.md y ANALYTICS.md.
+El docente dijo que aparentemente resolvió el acceso del nuevo correo; pendiente
+su explicación, sin cambios en Auth/lista/permisos remotos en esta actualización.
+
 CEAN / ExamenSimulacroDER es HTML/CSS/JS estático servido por GitHub Pages.
 El usuario confirmó Google OAuth con Supabase y ejecutó exam-history.sql.
-Último commit local observado: b7d45bb (Act Backend sencillo). El docente hace
+Último commit local observado: 0798f76 (Act backend completo). El docente hace
 su propio commit/push. El asistente no publicó ni cambió la historia Git.
 
 **Cambio actual preparado localmente:** banco completo fuera del repositorio,

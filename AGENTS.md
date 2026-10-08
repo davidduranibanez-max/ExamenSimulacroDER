@@ -5,11 +5,15 @@
 1. Leer `docs/CONTEXT.md`: estado, requisitos vigentes, decisiones y pendientes.
 2. Consultar `docs/ARCHITECTURE.md` solo si cambia el comportamiento de la aplicación.
 3. Consultar `docs/QUESTION_BANK.md` solo si cambia el banco o los sorteos.
+   Para la revisión constitucional leer `docs/CONSTITUTION_REVIEW.md` y el LEEME
+   privado de esa edición. Nunca publicar SQL con datos, justificaciones ni originales.
 4. Consultar `docs/TESTING.md` antes de verificar cambios.
 5. Consultar `docs/ANALYTICS.md` si cambian temporizador, eventos o estadísticas.
 6. Consultar `docs/EXPORTS.md` para paquete JSON, Excel y biblioteca local (no editar vendor).
 7. Consultar `docs/SUPABASE.md` para Google OAuth y lista de correos autorizados en Supabase;
    leer `docs/CLOUD_HISTORY.md` para resultados y `docs/PRIVATE_BANK.md` para banco/progreso privados.
+8. Consultar `docs/INTERFACE.md` para logo, navegación fija y diseño compacto;
+   la regresión local de la serie temporal se documenta en `docs/ANALYTICS.md`.
 
 No leer el banco completo ni el PDF para cambios de interfaz. Buscar un ID con `rg`
 y abrir únicamente sus JSON. `../banco-privado/data/manifest.json` permite localizar cualquier registro.
@@ -56,6 +60,7 @@ y abrir únicamente sus JSON. `../banco-privado/data/manifest.json` permite loca
 
 Banco y generadores fuera del repo, ../banco-privado. Nunca reintroducir preguntas
 ni CSV/SQL con datos en commits públicos. npm run check valida publicación actual;
-no limpia historial Git. Activación remota private-bank.sql e importación pendientes.
+no limpia historial Git. El docente activó private-bank.sql y mostró un examen
+real corregido por el servidor; falta confirmar el conteo remoto de 2018 preguntas.
 No force push/reescribir historia ni cambiar alojamiento automáticamente.
 El docente hace commit/push después de activar/probar. Leer PRIVATE_BANK.md.

@@ -23,6 +23,35 @@ export function distribution(scores) {
   scores.forEach(score => bins[Math.min(9, Math.floor(score / 10))].count++);
   return bins;
 }
+// Local linear LOESS, nearest 65% of observations and tricube distance weights.
+// Normalize dates before fitting: epoch milliseconds must not enter normal equations.
+export function localRegression(points, span = 0.65) {
+  const data = points.filter(p => Number.isFinite(p.x) && Number.isFinite(p.y)).map(p => ({ x: p.x, y: p.y })).sort((a, b) => a.x - b.x);
+  if (data.length < 3 || new Set(data.map(p => p.x)).size < 3) return [];
+  const first = data[0].x, range = data.at(-1).x - first;
+  const normalized = data.map(p => ({ x: (p.x - first) / range, y: p.y }));
+  const fraction = Number.isFinite(span) ? Math.max(0.25, Math.min(1, span)) : 0.65;
+  const neighbors = Math.min(data.length, Math.max(4, Math.ceil(data.length * fraction)));
+  return Array.from({ length: 81 }, (_, i) => {
+    const target = i / 80;
+    const distances = normalized.map(p => Math.abs(p.x - target)).sort((a, b) => a - b);
+    const radius = distances[neighbors - 1];
+    const local = normalized.map(p => {
+      const distance = Math.abs(p.x - target);
+      // Include distance ties with tiny positive weight; repeated dates must not
+      // leave a neighborhood empty halfway between two dense date clusters.
+      const weight = radius === 0 ? Number(distance === 0) : distance <= radius ? (1 - (distance / (radius * 1.000001)) ** 3) ** 3 : 0;
+      return { x: p.x - target, y: p.y, weight };
+    }).filter(p => p.weight > 0);
+    const sum = local.reduce((n, p) => n + p.weight, 0);
+    const mx = local.reduce((n, p) => n + p.weight * p.x, 0) / sum;
+    const my = local.reduce((n, p) => n + p.weight * p.y, 0) / sum;
+    let covariance = 0, variance = 0;
+    for (const p of local) { covariance += p.weight * (p.x - mx) * (p.y - my); variance += p.weight * (p.x - mx) ** 2; }
+    const estimate = variance > 1e-14 * sum ? my - covariance / variance * mx : my;
+    return { x: first + target * range, y: Math.max(0, Math.min(100, estimate)) };
+  });
+}
 export function getStatistics(history) {
   const attempts = [...history].sort((a, b) => a.completedAt - b.completedAt || a.startedAt - b.startedAt).map((exam, i) => {
     const grade = gradeExam(exam), calendar = exam.startedCalendar || calendarAt(exam.startedAt);
@@ -59,6 +88,7 @@ export function getStatistics(history) {
   questions.forEach(q => { const s = stages[Math.min(5, Math.floor(q.minute / 10))]; s.count++; s.correct += q.correct; if (!q.partial) s.seconds.push(q.seconds); });
   questions.forEach(q => { for (const group of [questionDays[q.calendar.weekday], hours[Math.floor(q.calendar.hour / 6)]]) { group.count++; group.correct += q.correct; } });
   return { attempts, questions, scores: summarize(scores), bins: distribution(scores), rolling, days, stages, questionDays, hours,
+    trend: localRegression(attempts.map(a => ({ x: a.at, y: a.score }))),
     questionSeconds: summarize(questions.filter(q => !q.partial).map(q => q.seconds)),
     improvement: scores.length >= 2 ? scores.at(-1) - scores[0] : null,
     correlations: [

@@ -84,6 +84,20 @@ Cerrar abruptamente puede perder hasta el último intervalo no confirmado.
 - Varianza **poblacional** (divide por N) y desviación estándar (raíz de varianza).
   Con un intento ambas son cero; no se interpreta como estabilidad demostrada.
 - Serie temporal ordenada por finalización, con eje de fechas reales.
+- «Puntos por examen»: observaciones verdes, Y de 0 a 100 puntos, X fecha/hora
+  real de finalización y línea amarilla de regresión local LOESS. Si todos los
+  exámenes son del mismo día, las marcas muestran hora/minuto/segundo y el día
+  aparece en la leyenda. El detalle conserva fecha y hora completas.
+- `localRegression(points)` aplica ajustes lineales con pesos tricúbicos y el
+  65 % de los vecinos por fecha (mínimo cuatro observaciones, o todas si hay tres).
+  Normaliza los timestamps, incluye empates de distancia con peso positivo mínimo
+  y usa la media local si no hay variación temporal en el vecindario. Produce 81
+  evaluaciones dentro del intervalo observado, limitadas a 0–100 para el gráfico.
+  Requiere tres exámenes en timestamps distintos; no inventa una tendencia cuando
+  faltan datos. No extrapola ni muestra significancia/confianza o predicciones.
+  Es una descripción exploratoria; con pocos intentos debe interpretarse con cautela.
+  No altera notas/eventos ni añade una tabla remota: se recalcula desde el historial.
+  Método: [NIST, LOESS](https://www.itl.nist.gov/div898/handbook/pmd/section1/pmd144.htm).
 - Progreso por orden de intento y media móvil de hasta los últimos tres intentos.
 - Histograma: intervalos 0–9, 10–19, …, 90–100, incluyendo ambos extremos.
 - Pearson: duración/puntuación, tiempo hasta respuesta/acierto, minuto de respuesta/

@@ -1,5 +1,12 @@
 # Banco e incisos: lectura y edición
 
+**Edición constitucional 7/10/2026:** CPU-0957…CPU-1283 tienen una revisión local
+con 100 contrastes normativos por pregunta y desarrollo de enunciados/claves según
+CPE 2009. `sourceRecord` conserva procedencia y `constitutionalReview` los artículos;
+los 327 originales completos y justificaciones quedan fuera del repo. El apartado
+de generación lingüística de abajo describe el banco inicial y las otras materias.
+Leer CONSTITUTION_REVIEW.md: activación remota manual pendiente, review=pending.
+
 ## Localizar una pregunta
 
 `../banco-privado/data/manifest.json` enumera cada ID, materia y archivo. Los IDs conservan la
