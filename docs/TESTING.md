@@ -1,3 +1,20 @@
+# Revisión de libros (12/10/2026)
+
+37 pruebas reales pasan en shell normal WSL usando
+`node --test --experimental-test-isolation=none tests/*.test.mjs`. El runner con
+procesos separados de este entorno mostraba sólo los siete archivos; no se tomó
+eso como prueba de los 37 casos. No se modificaron wrappers/dependencias.
+Integridad/publicación comprobadas con `node scripts/check-public.mjs`.
+
+Node de Windows con interoperabilidad aprobada y PGlite existente: 17 bloques,
+repetición, guard de conflicto/fila ausente, bajas y sesión anterior conservados.
+Módulo real createRemoteExams + SQL real: iniciar/responder/guardar/recuperar/
+finalizar, 20 correctas/10 incorrectas/70 pendientes e historial/estadísticas.
+Veinte sorteos y 32200 justificaciones contrastadas con los textos.
+Fuentes y límites: BOOK_REVIEW.md; bitácora privada PRUEBAS.md.
+No se ejecutó SQL remoto ni se probó otra vez Google/UI en producción; activación
+remota y aprobación pedagógica pendientes.
+
 # Revisión constitucional y controles compactos (7–8/10/2026)
 
 327 registros constitucionales, cada uno con 100 incisos distintos; 1691 preguntas

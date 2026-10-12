@@ -1,8 +1,18 @@
 # Contexto breve para continuar
 
-Última actualización: **7 de octubre de 2026**, hora de Bolivia.
+Última actualización: **12 de octubre de 2026**, hora de Bolivia.
 
 ## Estado vigente
+
+**Revisión de libros (12/10/2026):** 245 preguntas de filosofía y 77 de ética,
+100 incisos por registro (32200), originales completos y justificaciones privadas.
+Se amplían enunciados para evaluar identificación y distinciones conceptuales.
+Referencia local Morente/Losada 2004 y Gutiérrez/Esfinge 1978; apoyo textual 2003
+para conceptos ausentes de 1978. La captura del curso señala reimpresión 2007:
+se documenta la diferencia, sin inventar paginación. Leer BOOK_REVIEW.md y el LEEME
+privado. **La activación en Supabase requiere los SQL privados (322/322/322).**
+Otras 1696 preguntas intactas; aprobación docente pendiente. Flujo JS + PostgreSQL
+comprobado temporalmente y 37 pruebas Node en shell normal WSL; sin commit/push.
 
 **Revisión constitucional (7/10/2026):** 327 preguntas locales con 100 incisos cada
 una, originales conservados, fuentes CPE 2009 y justificaciones privadas. Se amplían

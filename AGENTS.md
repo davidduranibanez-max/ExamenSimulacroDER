@@ -6,7 +6,8 @@
 2. Consultar `docs/ARCHITECTURE.md` solo si cambia el comportamiento de la aplicación.
 3. Consultar `docs/QUESTION_BANK.md` solo si cambia el banco o los sorteos.
    Para la revisión constitucional leer `docs/CONSTITUTION_REVIEW.md` y el LEEME
-   privado de esa edición. Nunca publicar SQL con datos, justificaciones ni originales.
+   privado de esa edición. Para filosofía/ética leer `docs/BOOK_REVIEW.md` y el LEEME
+   privado de libros. Nunca publicar SQL con datos, justificaciones ni originales.
 4. Consultar `docs/TESTING.md` antes de verificar cambios.
 5. Consultar `docs/ANALYTICS.md` si cambian temporizador, eventos o estadísticas.
 6. Consultar `docs/EXPORTS.md` para paquete JSON, Excel y biblioteca local (no editar vendor).

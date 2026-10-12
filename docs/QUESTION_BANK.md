@@ -1,5 +1,9 @@
 # Banco e incisos: lectura y edición
 
+**Edición de libros 12/10/2026:** CPU-1484…CPU-1805, 322 registros y 32200 incisos.
+Leer BOOK_REVIEW.md: fuentes, ampliación de enunciados/claves, originales privados,
+justificaciones y actualización Supabase pendiente. review permanece pending.
+
 **Edición constitucional 7/10/2026:** CPU-0957…CPU-1283 tienen una revisión local
 con 100 contrastes normativos por pregunta y desarrollo de enunciados/claves según
 CPE 2009. `sourceRecord` conserva procedencia y `constitutionalReview` los artículos;

@@ -2,8 +2,10 @@
 Sistema y simulador de examen para practicar el ingreso a Derecho.
 
 Frontend público en GitHub Pages; Google, banco privado, progreso y resultados en
-Supabase. **Migración privada preparada localmente; falta activar el SQL e importar
-el CSV antes de publicar.** Pasos en [PRIVATE_BANK.md](docs/PRIVATE_BANK.md).
+Supabase. La edición de filosofía/ética del **12/10/2026** está aplicada localmente;
+requiere ejecutar sus actualizaciones privadas en Supabase. Fuentes, revisión y
+procedimiento en [BOOK_REVIEW.md](docs/BOOK_REVIEW.md). La preparación inicial del
+backend se documenta en [PRIVATE_BANK.md](docs/PRIVATE_BANK.md).
 No se hizo commit ni push desde esta sesión. El banco antiguo todavía está en Git.
 
 Para retomar desarrollo: [CONTEXT.md](docs/CONTEXT.md) y [AGENTS.md](AGENTS.md).
